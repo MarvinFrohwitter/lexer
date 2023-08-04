@@ -34,12 +34,15 @@ typedef struct Keyword {
 } Keyword;
 
 typedef struct Identifier {
-
 } Identifier;
+
 typedef struct Constant {
 } Constant;
+
 typedef struct StringLiteral {
+  char quote;
 } StringLiteral;
+
 typedef struct Punctuator {
   char *lbracket_t;
   char *rbracket_t;
@@ -119,32 +122,50 @@ typedef struct PreprocessingToken {
 
 } PreprocessingToken;
 
-typedef struct Token {
+typedef struct TokenKind {
   Keyword keyword;
   Identifier identifier;
   Constant constant;
   StringLiteral string_literal;
   Punctuator punctuator;
 
-} Token;
+} TokenKind;
 
 typedef struct TokenVarient {
-  Token token;
+  TokenKind token_kind;
   PreprocessingToken preprocessing_token;
 } TokenVarient;
 
-typedef struct Data {
+typedef enum Kind {
+  KEYWORD,
+  IDENTIFIER,
+  CONSTANT,
+  STRINGLITERAL,
+  PUNCTUATOR,
+  INVALID
+} Kind;
+
+typedef struct Token {
+  Kind kind;
+  const char *content;
   size_t size;
-  char *content;
-} Data;
+} Token;
 
 typedef struct Lexer {
+  const char *content;
+  size_t content_lenght;
+  size_t position;
   TokenVarient token_varient;
 
-  char *test;
-  Data *data;
 } Lexer;
 
-Lexer lexer_new(char *content, size_t size);
-Lexer *lexer_set_keywords(Lexer *lexer);
-Lexer *lexer_set_punctuator(Lexer *lexer);
+Lexer lexer_new(char *content, size_t size, size_t position);
+Lexer *lexer_token_set_keywords(Lexer *lexer);
+Lexer *lexer_token_set_punctuator(Lexer *lexer);
+Lexer *lexer_token_set_string_literal(Lexer *lexer);
+Token lexer_next(Lexer *lexer);
+void lexer_trim_left(Lexer *lexer);
+void lexer_chop_char(Lexer *lexer, size_t count);
+
+int issybol_alpha(char c);
+int issybol_alpha_and_(char c);
