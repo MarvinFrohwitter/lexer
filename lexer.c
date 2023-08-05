@@ -123,6 +123,7 @@ Lexer *lexer_token_set_keywords(Lexer *lexer) {
 }
 
 void lexer_chop_char(Lexer *lexer, size_t count) {
+
   for (size_t i = 0; i < count; i++) {
     assert(lexer->position < lexer->content_lenght);
 
@@ -171,6 +172,9 @@ Token lexer_next(Lexer *lexer) {
 
   token.content = &lexer->content[lexer->position];
   if (lexer->position > lexer->content_lenght) {
+    token.kind = INVALID;
+    token.size = 0;
+    token.content = &lexer->content[0];
     return token;
   }
 
@@ -181,8 +185,8 @@ Token lexer_next(Lexer *lexer) {
     error:
       fprintf(stderr, "ERROR: Broken Token! Just one %c was given\n",
               lexer->content[lexer->position]);
-      fprintf(stderr, "CHAR:%c\n", lexer->content[lexer->position]);
-      fprintf(stderr, "POS:%zu\n", lexer->position);
+      fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
+      fprintf(stderr, "    POS:%zu\n", lexer->position);
       token.kind = INVALID;
       token.size = 1;
       return token;
@@ -206,6 +210,7 @@ Token lexer_next(Lexer *lexer) {
 
         // TODO: The escape char is escaped/interpreted before the lexer handels
         // the char.
+        // NOTE: Parser task.
         fprintf(stderr,
                 "ERROR: Unreachable! Unknown STRING char: %c occured. \n",
                 lexer->content[lexer->position]);
@@ -273,20 +278,25 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  lexer_chop_char(lexer, 1);
   token.kind = INVALID;
+  if (lexer->position >= lexer->content_lenght) {
+    token.size = 0;
+    token.content = &lexer->content[0];
+    return token;
+  } else {
+    lexer_chop_char(lexer, 1);
+  }
   token.size = 1;
   return token;
 }
 int main(int argc, char *argv[]) {
 
-  // char *content_to_parse = "int main(void){return 0\"klaer\";}";
-  char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"        ";
+  char *content_to_parse = "int main(void){return 0\"klaer\";}";
+  // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"       5";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
-  int i = 0;
-  while (len > i) {
+  while (lexer.content_lenght - 1 >= lexer.position) {
     Token t = lexer_next(&lexer);
     char *temp;
     char *tofree_temp = temp = malloc(t.size * sizeof(char));
@@ -294,7 +304,6 @@ int main(int argc, char *argv[]) {
     temp[t.size] = 0;
     printf("%s form type %u\n", temp, t.kind);
     free(tofree_temp);
-    i++;
   }
 
   // printf("%s\n", lexer.token_varient.token_kind.keyword.auto_t);
