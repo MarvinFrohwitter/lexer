@@ -77,6 +77,14 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   return lexer;
 }
 
+const char *KEYWORDS[] = {"auto",     "break",   "case",   "char",     "const",
+                          "continue", "default", "do",     "double",   "else",
+                          "enum",     "extern",  "float",  "for",      "goto",
+                          "if",       "int",     "long",   "register", "return",
+                          "short",    "signed",  "sizeof", "static",   "struct",
+                          "switch",   "typedef", "union",  "unsigned", "void",
+                          "volatile", "while",   NULL};
+
 Lexer *lexer_token_set_keywords(Lexer *lexer) {
   lexer->token_varient.token_kind.keyword.auto_t = "auto";
   lexer->token_varient.token_kind.keyword.break_t = "break";
@@ -122,18 +130,39 @@ void lexer_chop_char(Lexer *lexer, size_t count) {
   }
 }
 
+int lexer_next_char_is(Lexer *lexer, char c) {
+  if (c == lexer->content[lexer->position + 1]) {
+    return 1;
+  }
+  return 0;
+}
+int is_escape_seq(Lexer *lexer, char c) {
+  if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
+    return 1;
+  }
+  return 0;
+}
+
 void lexer_trim_left(Lexer *lexer) {
+  // NOTE:White space Characters: Blank space, newline, horizontal tab, carriage
+  // return and form feed.
   while (lexer->position < lexer->content_lenght &&
-         isspace(lexer->content[lexer->position])) {
+         isspace(lexer->content[lexer->position]) &&
+         !is_escape_seq(lexer, lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
   }
 }
+int is_keyword(char *word) {
+  for (size_t i = 0; i <= sizeof(KEYWORDS); i++) {
+    if (strcmp(KEYWORDS[i], word) == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
 
-// NOTE:White space Characters:
-// Blank space, newline, horizontal tab, carriage return and
-// form feed.
-int issybol_alnum(char c) { return isalnum(c) || c == '_'; }
-int issybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
+int is_sybol_alnum(char c) { return isalnum(c) || c == '_'; }
+int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 
 Token lexer_next(Lexer *lexer) {
   lexer_trim_left(lexer);
@@ -145,30 +174,103 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  if (lexer->content[lexer->position] ==
-      lexer->token_varient.token_kind.string_literal.quote) {
+  if (lexer->content[lexer->position] == '"' &&
+      lexer->position < lexer->content_lenght) {
+    if (!lexer_next_char_is(lexer, '"') &&
+        lexer->position == lexer->content_lenght) {
+    error:
+      fprintf(stderr, "ERROR: Broken Token! Just one %c was given\n",
+              lexer->content[lexer->position]);
+      fprintf(stderr, "CHAR:%c\n", lexer->content[lexer->position]);
+      fprintf(stderr, "POS:%zu\n", lexer->position);
+      token.kind = INVALID;
+      token.size = 1;
+      return token;
+    }
     token.kind = STRINGLITERAL;
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    while (lexer->position < lexer->content_lenght &&
-           lexer->content[lexer->position] !=
-               lexer->token_varient.token_kind.string_literal.quote) {
-      lexer_chop_char(lexer, 1);
-    }
-    if (lexer->position < lexer->content_lenght) {
-      lexer_chop_char(lexer, 1);
+    while (lexer->position < lexer->content_lenght) {
+      if (lexer->content[lexer->position] == '"') {
+        lexer_chop_char(lexer, 1);
+        break;
+      } else if (is_escape_seq(lexer, lexer->content[lexer->position])) {
+        lexer_chop_char(lexer, 1);
+        if (lexer->position == lexer->content_lenght) {
+          goto error;
+        }
+      } else if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
+        lexer_chop_char(lexer, 1);
+
+      } else {
+
+        // TODO: The escape char is escaped/interpreted before the lexer handels
+        // the char.
+        fprintf(stderr,
+                "ERROR: Unreachable! Unknown STRING char: %c occured. \n",
+                lexer->content[lexer->position]);
+        fprintf(stderr, "CHAR:%c\n", lexer->content[lexer->position]);
+        fprintf(stderr, "POS:%zu\n", lexer->position);
+        fprintf(stderr, "The escape char is escaped/interpreted before the "
+                        "lexer handels the char.\n");
+        lexer_chop_char(lexer, 1);
+      }
     }
     token.size = lexer->position - token.size;
     return token;
   }
 
-  if (issybol_alpha_and_(lexer->content[lexer->position])) {
-    token.kind = IDENTIFIER;
+  // TODO: For hex do 2+6 itterations than chaeck e.g.'0xAABB88'
+  if (isdigit(lexer->content[lexer->position])) {
+    token.kind = NUMBER;
+    token.size = lexer->position;
+    lexer_chop_char(lexer, 1);
+    // isxdigit(lexer->content[lexer->position])
     while (lexer->position < lexer->content_lenght &&
-           issybol_alnum(lexer->content[lexer->position])) {
+           isdigit(lexer->content[lexer->position]) &&
+           !is_escape_seq(lexer, lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
       token.size = token.size + 1;
     }
+    token.size = lexer->position - token.size;
+    return token;
+  }
+
+  if (isalpha(lexer->content[lexer->position])) {
+
+    size_t startpos = token.size = lexer->position;
+    lexer_chop_char(lexer, 1);
+    while (lexer->position < lexer->content_lenght &&
+           isalpha(lexer->content[lexer->position])) {
+      lexer_chop_char(lexer, 1);
+    }
+
+    token.size = lexer->position - token.size;
+    char *word = malloc(sizeof(char) * token.size + 1);
+    strncpy(word, &lexer->content[startpos], token.size);
+    strcat(word, "\0");
+    printf("The word that is potenatily a  keyword: %s\n", word);
+    if (is_keyword(word)) {
+
+      token.kind = KEYWORD;
+      free(word);
+      return token;
+    } else {
+      free(word);
+      lexer->position = startpos;
+    }
+  }
+
+  if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
+    token.kind = IDENTIFIER;
+    token.size = lexer->position;
+    lexer_chop_char(lexer, 1);
+    while (lexer->position < lexer->content_lenght &&
+           is_sybol_alnum(lexer->content[lexer->position])) {
+      lexer_chop_char(lexer, 1);
+    }
+    token.size = lexer->position - token.size;
+    return token;
   }
 
   lexer_chop_char(lexer, 1);
@@ -179,7 +281,7 @@ Token lexer_next(Lexer *lexer) {
 int main(int argc, char *argv[]) {
 
   char *content_to_parse = "int main(void){return 0\"klaer\";}";
-  // char *content_to_parse = "           \"klaer\"  \"nijt\"        ";
+  // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"        ";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 

@@ -138,6 +138,7 @@ typedef struct TokenVarient {
 
 typedef enum Kind {
   KEYWORD,
+  NUMBER,
   IDENTIFIER,
   CONSTANT,
   STRINGLITERAL,
@@ -166,6 +167,9 @@ Lexer *lexer_token_set_string_literal(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
 void lexer_trim_left(Lexer *lexer);
 void lexer_chop_char(Lexer *lexer, size_t count);
+int lexer_next_char_is(Lexer *lexer, char c);
 
-int issybol_alpha(char c);
-int issybol_alpha_and_(char c);
+int is_escape_seq(Lexer *lexer, char c);
+int is_sybol_alpha(char c);
+int is_sybol_alpha_and_(char c);
+int is_keyword(char *word);
