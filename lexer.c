@@ -246,17 +246,17 @@ Token lexer_next(Lexer *lexer) {
     }
 
     token.size = lexer->position - token.size;
-    char *word = malloc(sizeof(char) * token.size + 1);
+    char *word;
+    char *tofree_word = word = malloc(sizeof(char) * token.size + 1);
     strncpy(word, &lexer->content[startpos], token.size);
     strcat(word, "\0");
-    printf("The word that is potenatily a  keyword: %s\n", word);
     if (is_keyword(word)) {
 
       token.kind = KEYWORD;
-      free(word);
+      free(tofree_word);
       return token;
     } else {
-      free(word);
+      free(tofree_word);
       lexer->position = startpos;
     }
   }
@@ -280,18 +280,20 @@ Token lexer_next(Lexer *lexer) {
 }
 int main(int argc, char *argv[]) {
 
-  char *content_to_parse = "int main(void){return 0\"klaer\";}";
-  // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"        ";
+  // char *content_to_parse = "int main(void){return 0\"klaer\";}";
+  char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"        ";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
   int i = 0;
   while (len > i) {
     Token t = lexer_next(&lexer);
-    char *temp = malloc(t.size);
+    char *temp;
+    char *tofree_temp = temp = malloc(t.size * sizeof(char));
     strncpy(temp, t.content, t.size);
+    temp[t.size] = 0;
     printf("%s form type %u\n", temp, t.kind);
-    free(temp);
+    free(tofree_temp);
     i++;
   }
 
