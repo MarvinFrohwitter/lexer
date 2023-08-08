@@ -151,7 +151,7 @@ int lexer_char_is(Lexer *lexer, char c) {
   return 0;
 }
 
-int is_escape_seq(Lexer *lexer, char c) {
+int is_escape_seq(char c) {
   if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
     return 1;
   }
@@ -162,13 +162,14 @@ void lexer_trim_left(Lexer *lexer) {
   // NOTE:White space Characters: Blank space, newline, horizontal tab, carriage
   // return and form feed.
   while (check_boundery(lexer) && isspace(lexer->content[lexer->position]) &&
-         !is_escape_seq(lexer, lexer->content[lexer->position])) {
+         !is_escape_seq(lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
   }
 }
 int is_keyword(char *word) {
   for (size_t i = 0; i <= sizeof(KEYWORDS); i++) {
     if (strcmp(KEYWORDS[i], word) == 0) {
+      free(tofree_word);
       return 1;
     }
   }
@@ -202,7 +203,7 @@ Token lexer_next(Lexer *lexer) {
       if (lexer_char_is(lexer, '"')) {
         lexer_chop_char(lexer, 1);
         break;
-      } else if (is_escape_seq(lexer, lexer->content[lexer->position])) {
+      } else if (is_escape_seq(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
         if (!check_boundery(lexer)) {
           goto error;
@@ -249,7 +250,7 @@ Token lexer_next(Lexer *lexer) {
     } else {
       while (check_boundery(lexer) &&
              isdigit(lexer->content[lexer->position]) &&
-             !is_escape_seq(lexer, lexer->content[lexer->position])) {
+             !is_escape_seq(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
         token.size = token.size + 1;
       }

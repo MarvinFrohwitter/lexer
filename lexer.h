@@ -171,7 +171,7 @@ int lexer_next_char_is(Lexer *lexer, char c);
 int lexer_char_is(Lexer *lexer, char c);
 
 int check_boundery(Lexer *lexer);
-int is_escape_seq(Lexer *lexer, char c);
+int is_escape_seq(char c);
 int is_sybol_alpha(char c);
 int is_sybol_alpha_and_(char c);
 int is_keyword(char *word);
