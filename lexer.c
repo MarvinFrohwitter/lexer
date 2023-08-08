@@ -137,6 +137,14 @@ int lexer_next_char_is(Lexer *lexer, char c) {
   }
   return 0;
 }
+
+int lexer_char_is(Lexer *lexer, char c) {
+  if (c == lexer->content[lexer->position]) {
+    return 1;
+  }
+  return 0;
+}
+
 int is_escape_seq(Lexer *lexer, char c) {
   if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
     return 1;
@@ -230,12 +238,28 @@ Token lexer_next(Lexer *lexer) {
     token.kind = NUMBER;
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    // isxdigit(lexer->content[lexer->position])
-    while (lexer->position < lexer->content_lenght &&
-           isdigit(lexer->content[lexer->position]) &&
-           !is_escape_seq(lexer, lexer->content[lexer->position])) {
+
+    if (lexer->content[lexer->position - 1] == '0' &&
+        lexer->content[lexer->position] == 'x') {
       lexer_chop_char(lexer, 1);
-      token.size = token.size + 1;
+      for (size_t i = 1; i <= 6; i++) {
+        if (isxdigit(lexer->content[lexer->position]) &&
+            lexer->position < lexer->content_lenght) {
+          lexer_chop_char(lexer, 1);
+        } else {
+          goto error;
+        }
+      }
+      if (!lexer_char_is(lexer, ' ')) {
+        goto error;
+      }
+    } else {
+      while (lexer->position < lexer->content_lenght &&
+             isdigit(lexer->content[lexer->position]) &&
+             !is_escape_seq(lexer, lexer->content[lexer->position])) {
+        lexer_chop_char(lexer, 1);
+        token.size = token.size + 1;
+      }
     }
     token.size = lexer->position - token.size;
     return token;
@@ -291,7 +315,7 @@ Token lexer_next(Lexer *lexer) {
 }
 int main(int argc, char *argv[]) {
 
-  char *content_to_parse = "int main(void){return 0\"klaer\";}";
+  char *content_to_parse = "int 0xBBAACC main(void){return 0\"klaer\";}";
   // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"       5";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);

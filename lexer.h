@@ -168,6 +168,7 @@ Token lexer_next(Lexer *lexer);
 void lexer_trim_left(Lexer *lexer);
 void lexer_chop_char(Lexer *lexer, size_t count);
 int lexer_next_char_is(Lexer *lexer, char c);
+int lexer_char_is(Lexer *lexer, char c);
 
 int is_escape_seq(Lexer *lexer, char c);
 int is_sybol_alpha(char c);
