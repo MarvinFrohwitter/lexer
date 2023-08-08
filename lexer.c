@@ -166,10 +166,11 @@ void lexer_trim_left(Lexer *lexer) {
     lexer_chop_char(lexer, 1);
   }
 }
-int is_keyword(char *word) {
+int lexer_is_keyword(Lexer *lexer, size_t length) {
+
   for (size_t i = 0; i <= sizeof(KEYWORDS); i++) {
-    if (strcmp(KEYWORDS[i], word) == 0) {
-      free(tofree_word);
+    if (strncmp(KEYWORDS[i], &lexer->content[lexer->position - length],
+                length) == 0) {
       return 1;
     }
   }
@@ -268,18 +269,12 @@ Token lexer_next(Lexer *lexer) {
     }
 
     token.size = lexer->position - token.size;
-    char *word;
-    char *tofree_word = word = malloc(sizeof(char) * token.size + 1);
-    strncpy(word, &lexer->content[startpos], token.size);
-    strcat(word, "\0");
 
-    if (is_keyword(word)) {
+    if (lexer_is_keyword(lexer, token.size)) {
 
       token.kind = KEYWORD;
-      free(tofree_word);
       return token;
     } else {
-      free(tofree_word);
       lexer->position = startpos;
     }
   }
@@ -317,7 +312,10 @@ error:
 }
 int main(int argc, char *argv[]) {
 
-  char *content_to_parse = "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
+  (void)argc;
+  (void)argv;
+  char *content_to_parse =
+      "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
   // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"       5";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
