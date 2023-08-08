@@ -131,6 +131,12 @@ void lexer_chop_char(Lexer *lexer, size_t count) {
   }
 }
 
+int check_boundery(Lexer *lexer) {
+  if (lexer->position < lexer->content_lenght) {
+    return 1;
+  }
+  return 0;
+}
 int lexer_next_char_is(Lexer *lexer, char c) {
   if (c == lexer->content[lexer->position + 1]) {
     return 1;
@@ -155,8 +161,7 @@ int is_escape_seq(Lexer *lexer, char c) {
 void lexer_trim_left(Lexer *lexer) {
   // NOTE:White space Characters: Blank space, newline, horizontal tab, carriage
   // return and form feed.
-  while (lexer->position < lexer->content_lenght &&
-         isspace(lexer->content[lexer->position]) &&
+  while (check_boundery(lexer) && isspace(lexer->content[lexer->position]) &&
          !is_escape_seq(lexer, lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
   }
@@ -186,47 +191,35 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  if (lexer->content[lexer->position] == '"' &&
-      lexer->position < lexer->content_lenght) {
-    if (!lexer_next_char_is(lexer, '"') &&
-        lexer->position == lexer->content_lenght) {
-    error:
-      fprintf(stderr, "ERROR: Broken Token! Just one %c was given\n",
-              lexer->content[lexer->position]);
-      fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
-      fprintf(stderr, "    POS:%zu\n", lexer->position);
-      token.kind = INVALID;
-      token.size = 1;
-      return token;
+  if (lexer_char_is(lexer, '"') && check_boundery(lexer)) {
+    if (!lexer_next_char_is(lexer, '"') && !check_boundery(lexer)) {
+      goto error;
     }
     token.kind = STRINGLITERAL;
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    while (lexer->position < lexer->content_lenght) {
-      if (lexer->content[lexer->position] == '"') {
+    while (check_boundery(lexer)) {
+      if (lexer_char_is(lexer, '"')) {
         lexer_chop_char(lexer, 1);
         break;
       } else if (is_escape_seq(lexer, lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
-        if (lexer->position == lexer->content_lenght) {
+        if (!check_boundery(lexer)) {
           goto error;
         }
       } else if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
 
       } else {
+        lexer_chop_char(lexer, 1);
 
-        // TODO: The escape char is escaped/interpreted before the lexer handels
-        // the char.
         // NOTE: Parser task.
+        // The escape char is escaped/interpreted before the lexer handels
+        // the char.
         fprintf(stderr,
                 "ERROR: Unreachable! Unknown STRING char: %c occured. \n",
                 lexer->content[lexer->position]);
-        fprintf(stderr, "CHAR:%c\n", lexer->content[lexer->position]);
-        fprintf(stderr, "POS:%zu\n", lexer->position);
-        fprintf(stderr, "The escape char is escaped/interpreted before the "
-                        "lexer handels the char.\n");
-        lexer_chop_char(lexer, 1);
+        goto error;
       }
     }
     token.size = lexer->position - token.size;
@@ -240,11 +233,11 @@ Token lexer_next(Lexer *lexer) {
     lexer_chop_char(lexer, 1);
 
     if (lexer->content[lexer->position - 1] == '0' &&
-        lexer->content[lexer->position] == 'x') {
+        lexer_char_is(lexer, 'x')) {
       lexer_chop_char(lexer, 1);
       for (size_t i = 1; i <= 6; i++) {
         if (isxdigit(lexer->content[lexer->position]) &&
-            lexer->position < lexer->content_lenght) {
+            check_boundery(lexer)) {
           lexer_chop_char(lexer, 1);
         } else {
           goto error;
@@ -254,7 +247,7 @@ Token lexer_next(Lexer *lexer) {
         goto error;
       }
     } else {
-      while (lexer->position < lexer->content_lenght &&
+      while (check_boundery(lexer) &&
              isdigit(lexer->content[lexer->position]) &&
              !is_escape_seq(lexer, lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
@@ -269,8 +262,7 @@ Token lexer_next(Lexer *lexer) {
 
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    while (lexer->position < lexer->content_lenght &&
-           isalpha(lexer->content[lexer->position])) {
+    while (check_boundery(lexer) && isalpha(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
 
@@ -279,6 +271,7 @@ Token lexer_next(Lexer *lexer) {
     char *tofree_word = word = malloc(sizeof(char) * token.size + 1);
     strncpy(word, &lexer->content[startpos], token.size);
     strcat(word, "\0");
+
     if (is_keyword(word)) {
 
       token.kind = KEYWORD;
@@ -294,7 +287,7 @@ Token lexer_next(Lexer *lexer) {
     token.kind = IDENTIFIER;
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    while (lexer->position < lexer->content_lenght &&
+    while (check_boundery(lexer) &&
            is_sybol_alnum(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
@@ -303,7 +296,7 @@ Token lexer_next(Lexer *lexer) {
   }
 
   token.kind = INVALID;
-  if (lexer->position >= lexer->content_lenght) {
+  if (!check_boundery(lexer)) {
     token.size = 0;
     token.content = &lexer->content[0];
     return token;
@@ -312,10 +305,18 @@ Token lexer_next(Lexer *lexer) {
   }
   token.size = 1;
   return token;
+error:
+  fprintf(stderr, "ERROR: Broken Token! [ %c ] was given\n",
+          lexer->content[lexer->position]);
+  fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
+  fprintf(stderr, "    POS:%zu\n", lexer->position);
+  token.kind = INVALID;
+  token.size = 1;
+  return token;
 }
 int main(int argc, char *argv[]) {
 
-  char *content_to_parse = "int 0xBBAACC main(void){return 0\"klaer\";}";
+  char *content_to_parse = "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
   // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"       5";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
