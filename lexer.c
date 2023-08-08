@@ -166,9 +166,11 @@ void lexer_trim_left(Lexer *lexer) {
     lexer_chop_char(lexer, 1);
   }
 }
-int lexer_is_keyword(Lexer *lexer, size_t length) {
 
-  for (size_t i = 0; i <= sizeof(KEYWORDS); i++) {
+int lexer_is_keyword(Lexer *lexer, size_t length) {
+  size_t count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
+
+  for (size_t i = 0; i < count; i++) {
     if (strncmp(KEYWORDS[i], &lexer->content[lexer->position - length],
                 length) == 0) {
       return 1;
@@ -314,9 +316,8 @@ int main(int argc, char *argv[]) {
 
   (void)argc;
   (void)argv;
-  char *content_to_parse =
-      "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
-  // char *content_to_parse = "   9        \"jkkl\naer\"  \"nijt\"       5";
+  char *content_to_parse = "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
+  // char *content_to_parse = " void  9   HASE  while   \"jkkl\naer\"  \"nijt\"       5";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
