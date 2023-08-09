@@ -173,11 +173,12 @@ Lexer *lexer_token_set_string_literal(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
 Token lexer_error(Lexer *lexer);
 void lexer_trim_left(Lexer *lexer);
-void lexer_chop_char(Lexer *lexer, size_t count);
+Token lexer_chop_char(Lexer *lexer, size_t count);
 int lexer_next_char_is(Lexer *lexer, char c);
 int lexer_char_is(Lexer *lexer, char c);
 int lexer_is_keyword(Lexer *lexer, size_t length);
 int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
+Token lexer_invalid_token(Lexer *lexer);
 
 int check_boundery(Lexer *lexer);
 int is_escape_seq(char c);

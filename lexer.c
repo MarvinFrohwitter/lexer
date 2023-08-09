@@ -127,16 +127,24 @@ Lexer *lexer_token_set_keywords(Lexer *lexer) {
   return lexer;
 }
 
-void lexer_chop_char(Lexer *lexer, size_t count) {
+Token lexer_chop_char(Lexer *lexer, size_t count) {
 
   for (size_t i = 0; i < count; i++) {
     if (!check_boundery(lexer)) {
-      lexer_error(lexer);
+      return lexer_error(lexer);
     }
     lexer->position = lexer->position + 1;
   }
+  return lexer_invalid_token(lexer);
 }
 
+Token lexer_invalid_token(Lexer *lexer) {
+  Token token;
+  token.kind = INVALID;
+  token.size = 1;
+  token.content = &lexer->content[lexer->position];
+  return token;
+}
 int check_boundery(Lexer *lexer) {
   if (lexer->position < lexer->content_lenght) {
     return 1;
@@ -212,10 +220,7 @@ Token lexer_next(Lexer *lexer) {
 
   token.content = &lexer->content[lexer->position];
   if (lexer->position > lexer->content_lenght) {
-    token.kind = INVALID;
-    token.size = 0;
-    token.content = &lexer->content[0];
-    return token;
+    return lexer_invalid_token(lexer);
   }
 
   if (lexer_char_is(lexer, '"') && check_boundery(lexer)) {
@@ -321,12 +326,15 @@ Token lexer_next(Lexer *lexer) {
     if (lexer_is_punctuator(lexer, 1, 0)) {
       token.kind = PUNCTUATOR;
       lexer->position = lexer->position - 1;
-      if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') && lexer->content[lexer->position + 2] == '=') {
-                lexer_chop_char(lexer, 3);
-      } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>') && lexer->content[lexer->position + 2] == '=') {
-                lexer_chop_char(lexer, 3);
-      } else if (lexer_char_is(lexer, '.') && lexer_next_char_is(lexer, '.') && lexer->content[lexer->position + 2] == '.') {
-                lexer_chop_char(lexer, 3);
+      if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') &&
+          lexer->content[lexer->position + 2] == '=') {
+        lexer_chop_char(lexer, 3);
+      } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>') &&
+                 lexer->content[lexer->position + 2] == '=') {
+        lexer_chop_char(lexer, 3);
+      } else if (lexer_char_is(lexer, '.') && lexer_next_char_is(lexer, '.') &&
+                 lexer->content[lexer->position + 2] == '.') {
+        lexer_chop_char(lexer, 3);
       } else if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '=')) {
         lexer_chop_char(lexer, 2);
       } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '=')) {
@@ -381,9 +389,7 @@ Token lexer_next(Lexer *lexer) {
 
   token.kind = INVALID;
   if (!check_boundery(lexer)) {
-    token.size = 0;
-    token.content = &lexer->content[0];
-    return token;
+    return lexer_invalid_token(lexer);
   } else {
     lexer_chop_char(lexer, 1);
   }
@@ -397,18 +403,15 @@ Token lexer_error(Lexer *lexer) {
   fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
   fprintf(stderr, "    POS:%zu\n", lexer->position);
 
-  Token token;
-  token.kind = INVALID;
-  token.size = 1;
-  token.content = &lexer->content[0];
-  return token;
+  return lexer_invalid_token(lexer);
 }
 int main(int argc, char *argv[]) {
 
   (void)argc;
   (void)argv;
-  char *content_to_parse =
-      "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1";
+  // char *content_to_parse =
+      // "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo "
+      // "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1      ";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
@@ -422,10 +425,8 @@ int main(int argc, char *argv[]) {
     free(tofree_temp);
   }
 
-  // printf("%s\n", lexer.token_varient.token_kind.keyword.auto_t);
-  // printf("%s\n", lexer.token_varient.token_kind.punctuator.bxor_t);
-  // char *h = "Succses";
-  // printf("%s\n", h);
+  char *h = "Succses";
+  printf("%s\n", h);
 
   return 0;
 }
