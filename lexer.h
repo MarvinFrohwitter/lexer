@@ -34,11 +34,11 @@ typedef struct Keyword {
 } Keyword;
 
 typedef struct Identifier {
-    char *char_identifier;
+  char *char_identifier;
 } Identifier;
 
 typedef struct Constant {
-    size_t int_constant;
+  size_t int_constant;
 } Constant;
 
 typedef struct StringLiteral {
@@ -105,16 +105,16 @@ typedef struct Punctuator {
 } Punctuator;
 
 typedef struct HeaderName {
-   char *header;
+  char *header;
 } HeaderName;
 typedef struct PPNumber {
-    size_t ppnumber;
+  size_t ppnumber;
 } PPNumber;
 typedef struct CharacterConstant {
-   char char_constant;
+  char char_constant;
 } CharacterConstant;
 typedef struct NonWhiteSpaceChar {
-    char non_white_space;
+  char non_white_space;
 } NonWhiteSpaceChar;
 
 typedef struct PreprocessingToken {
@@ -171,11 +171,13 @@ Lexer *lexer_token_set_keywords(Lexer *lexer);
 Lexer *lexer_token_set_punctuator(Lexer *lexer);
 Lexer *lexer_token_set_string_literal(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
+Token lexer_error(Lexer *lexer);
 void lexer_trim_left(Lexer *lexer);
 void lexer_chop_char(Lexer *lexer, size_t count);
 int lexer_next_char_is(Lexer *lexer, char c);
 int lexer_char_is(Lexer *lexer, char c);
 int lexer_is_keyword(Lexer *lexer, size_t length);
+int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
 
 int check_boundery(Lexer *lexer);
 int is_escape_seq(char c);

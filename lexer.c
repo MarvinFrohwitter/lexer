@@ -24,6 +24,11 @@ Lexer *lexer_token_set_string_literal(Lexer *lexer) {
   lexer->token_varient.token_kind.string_literal.quote = '"';
   return lexer;
 }
+
+const char *PUNCTUATORS[] = {"[", "]", "(", ")", "{", "}", ".", "&", "*",
+                             "+", "-", "~", "|", "/", "%", "<", ">", "^",
+                             "|", "?", ":", ";", "=", ",", NULL};
+
 Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   lexer->token_varient.token_kind.punctuator.lbracket_t = "[";
   lexer->token_varient.token_kind.punctuator.rbracket_t = "]";
@@ -125,8 +130,9 @@ Lexer *lexer_token_set_keywords(Lexer *lexer) {
 void lexer_chop_char(Lexer *lexer, size_t count) {
 
   for (size_t i = 0; i < count; i++) {
-    assert(lexer->position < lexer->content_lenght);
-
+    if (!check_boundery(lexer)) {
+      lexer_error(lexer);
+    }
     lexer->position = lexer->position + 1;
   }
 }
@@ -168,10 +174,26 @@ void lexer_trim_left(Lexer *lexer) {
 }
 
 int lexer_is_keyword(Lexer *lexer, size_t length) {
-  size_t count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
+  size_t array_count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
 
-  for (size_t i = 0; i < count; i++) {
+  for (size_t i = 0; i < array_count; i++) {
+    // The position of the lexer is on the next char.
     if (strncmp(KEYWORDS[i], &lexer->content[lexer->position - length],
+                length) == 0) {
+      return 1;
+    }
+  }
+  return 0;
+}
+
+int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
+  if (max == 0) {
+    max = sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]) - 1;
+  }
+
+  // The position of the lexer is on the next char.
+  for (size_t i = 0; i < max; i++) {
+    if (strncmp(PUNCTUATORS[i], &lexer->content[lexer->position - length],
                 length) == 0) {
       return 1;
     }
@@ -181,6 +203,7 @@ int lexer_is_keyword(Lexer *lexer, size_t length) {
 
 int is_sybol_alnum(char c) { return isalnum(c) || c == '_'; }
 int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
+int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 
 Token lexer_next(Lexer *lexer) {
   lexer_trim_left(lexer);
@@ -197,7 +220,7 @@ Token lexer_next(Lexer *lexer) {
 
   if (lexer_char_is(lexer, '"') && check_boundery(lexer)) {
     if (!lexer_next_char_is(lexer, '"') && !check_boundery(lexer)) {
-      goto error;
+      return lexer_error(lexer);
     }
     token.kind = STRINGLITERAL;
     token.size = lexer->position;
@@ -209,7 +232,7 @@ Token lexer_next(Lexer *lexer) {
       } else if (is_escape_seq(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
         if (!check_boundery(lexer)) {
-          goto error;
+          return lexer_error(lexer);
         }
       } else if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
@@ -223,7 +246,7 @@ Token lexer_next(Lexer *lexer) {
         fprintf(stderr,
                 "ERROR: Unreachable! Unknown STRING char: %c occured. \n",
                 lexer->content[lexer->position]);
-        goto error;
+        return lexer_error(lexer);
       }
     }
     token.size = lexer->position - token.size;
@@ -244,18 +267,17 @@ Token lexer_next(Lexer *lexer) {
             check_boundery(lexer)) {
           lexer_chop_char(lexer, 1);
         } else {
-          goto error;
+          return lexer_error(lexer);
         }
       }
       if (!lexer_char_is(lexer, ' ')) {
-        goto error;
+        return lexer_error(lexer);
       }
     } else {
       while (check_boundery(lexer) &&
              isdigit(lexer->content[lexer->position]) &&
              !is_escape_seq(lexer->content[lexer->position])) {
         lexer_chop_char(lexer, 1);
-        token.size = token.size + 1;
       }
     }
     token.size = lexer->position - token.size;
@@ -293,6 +315,70 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+  if (check_boundery(lexer)) {
+    token.size = lexer->position;
+    lexer_chop_char(lexer, 1);
+    if (lexer_is_punctuator(lexer, 1, 0)) {
+      token.kind = PUNCTUATOR;
+      lexer->position = lexer->position - 1;
+      if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') && lexer->content[lexer->position + 2] == '=') {
+                lexer_chop_char(lexer, 3);
+      } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>') && lexer->content[lexer->position + 2] == '=') {
+                lexer_chop_char(lexer, 3);
+      } else if (lexer_char_is(lexer, '.') && lexer_next_char_is(lexer, '.') && lexer->content[lexer->position + 2] == '.') {
+                lexer_chop_char(lexer, 3);
+      } else if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '=') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '!') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '&') && lexer_next_char_is(lexer, '&')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '|') && lexer_next_char_is(lexer, '|')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '>')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '+') && lexer_next_char_is(lexer, '+')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '-')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '*') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '%') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '+') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '&') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '^') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '|') && lexer_next_char_is(lexer, '=')) {
+        lexer_chop_char(lexer, 2);
+      } else if (lexer_char_is(lexer, '#') && lexer_next_char_is(lexer, '#')) {
+        lexer_chop_char(lexer, 2);
+      } else {
+
+        lexer_chop_char(lexer, 1);
+        token.size = 1;
+        return token;
+      }
+
+      token.size = lexer->position - token.size;
+      return token;
+    }
+  }
+
   token.kind = INVALID;
   if (!check_boundery(lexer)) {
     token.size = 0;
@@ -303,21 +389,26 @@ Token lexer_next(Lexer *lexer) {
   }
   token.size = 1;
   return token;
-error:
-  fprintf(stderr, "ERROR: Broken Token! [ %c ] was given\n",
+}
+
+Token lexer_error(Lexer *lexer) {
+  fprintf(stderr, "ERROR: Broken Token! [%c] was given\n",
           lexer->content[lexer->position]);
   fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
   fprintf(stderr, "    POS:%zu\n", lexer->position);
+
+  Token token;
   token.kind = INVALID;
   token.size = 1;
+  token.content = &lexer->content[0];
   return token;
 }
 int main(int argc, char *argv[]) {
 
   (void)argc;
   (void)argv;
-  char *content_to_parse = "int BUS hallo 0xBBAACC main(void){return 0\"klaer;} 23 hallo";
-  // char *content_to_parse = " void  9   HASE  while   \"jkkl\naer\"  \"nijt\"       5";
+  char *content_to_parse =
+      "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
