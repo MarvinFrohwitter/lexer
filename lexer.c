@@ -5,8 +5,14 @@
 #include <stdlib.h>
 #include <string.h>
 
+#include "../gutils/gutils.h"
 #include "./lexer.h"
 
+// The function lexer_new() creates the new state of a lexer.
+//     @param content The content that the lexer has to tokenise.
+//     @param size The content length.
+//     @param The position of the content the lexer should begin tokenise.
+//     @return Lexer The function returns a new initilized lexer.
 Lexer lexer_new(char *content, size_t size, size_t position) {
   Lexer lexer;
   lexer_token_set_string_literal(&lexer);
@@ -19,16 +25,26 @@ Lexer lexer_new(char *content, size_t size, size_t position) {
   return lexer;
 }
 
+// The function lexer_token_set_string_literal() sets the qoute to the internal
+// lexer token.
+// @param lexer The Lexer that will be modified.
+// @return Lexer the that was passed in and was modified.
 Lexer *lexer_token_set_string_literal(Lexer *lexer) {
 
   lexer->token_varient.token_kind.string_literal.quote = '"';
   return lexer;
 }
 
+// The variable PUNCTUATORS is a pointer to the array of single tokens of type
+// PUNCTUATOR. It contains the tokens to match on.
 const char *PUNCTUATORS[] = {"[", "]", "(", ")", "{", "}", ".", "&", "*",
                              "+", "-", "~", "|", "/", "%", "<", ">", "^",
                              "|", "?", ":", ";", "=", ",", NULL};
 
+// The function ptr lexer_token_set_punctuator() is the function that sets the
+// internal lexer tokens of type PUNCTUATOR.
+// @param lexer The lexer that will be modified.
+// @return Lexer the that was passed in and was modified.
 Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   lexer->token_varient.token_kind.punctuator.lbracket_t = "[";
   lexer->token_varient.token_kind.punctuator.rbracket_t = "]";
@@ -82,6 +98,8 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   return lexer;
 }
 
+// The variable KEYWORDS is a pointer to the array of single tokens of type
+// KEYWORD. It contains the tokens to match on.
 const char *KEYWORDS[] = {"auto",     "break",   "case",   "char",     "const",
                           "continue", "default", "do",     "double",   "else",
                           "enum",     "extern",  "float",  "for",      "goto",
@@ -90,6 +108,10 @@ const char *KEYWORDS[] = {"auto",     "break",   "case",   "char",     "const",
                           "switch",   "typedef", "union",  "unsigned", "void",
                           "volatile", "while",   NULL};
 
+// The function ptr lexer_token_set_keywords() is the function that sets the
+// internal lexer tokens of type KEYWORD.
+// @param lexer The lexer that will be modified.
+// @return Lexer the that was passed in and was modified.
 Lexer *lexer_token_set_keywords(Lexer *lexer) {
   lexer->token_varient.token_kind.keyword.auto_t = "auto";
   lexer->token_varient.token_kind.keyword.break_t = "break";
@@ -127,6 +149,12 @@ Lexer *lexer_token_set_keywords(Lexer *lexer) {
   return lexer;
 }
 
+// The function lexer_chop_char() consumes the amount of chars given by the
+// count. So it cuts of the content that the lexer tokenise form the left.
+// @param lexer The given Lexer that contains the current state.
+// @param count The amount of chars that will be choped from the left of the
+// content.
+// @return Lexer the that was passed in and was modified.
 Token lexer_chop_char(Lexer *lexer, size_t count) {
 
   for (size_t i = 0; i < count; i++) {
@@ -138,6 +166,11 @@ Token lexer_chop_char(Lexer *lexer, size_t count) {
   return lexer_invalid_token(lexer);
 }
 
+// The function lexer_invalid_token() sets the lexer values to the type of an
+// invalid token.
+// @param lexer The given Lexer that contains the current state.
+// @return Token that has values of kind=INVALID, size=1 and content= current
+// lexer position.
 Token lexer_invalid_token(Lexer *lexer) {
   Token token;
   token.kind = INVALID;
@@ -145,12 +178,25 @@ Token lexer_invalid_token(Lexer *lexer) {
   token.content = &lexer->content[lexer->position];
   return token;
 }
+
+// The function check_boundery() checks for the length of the lexer content, if
+// the current lexer position is in the content length.
+// @param lexer The given Lexer that contains the current state.
+// @return boolean True, if the lexer position is in the content length,
+// otherwise false.
 int check_boundery(Lexer *lexer) {
   if (lexer->position < lexer->content_lenght) {
     return 1;
   }
   return 0;
 }
+
+// The function lexer_next_char_is() returns, if the next character in the
+// content is  equal to the given char c.
+// @param lexer The given Lexer that contains the current state.
+// @param c The character that will be compared with the lexer position.
+// @return boolean True, if the given char c is identical to the next char in
+// the content that lexer tokenise.
 int lexer_next_char_is(Lexer *lexer, char c) {
   if (c == lexer->content[lexer->position + 1]) {
     return 1;
@@ -158,6 +204,12 @@ int lexer_next_char_is(Lexer *lexer, char c) {
   return 0;
 }
 
+// The function lexer_char_is() returns, if the character in the content is
+// equal to the given char c.
+// @param lexer The given Lexer that contains the current state.
+// @param c The character that will be compared with the lexer position.
+// @return boolean True, if the given char c is identical to the current char in
+// the content that lexer tokenise.
 int lexer_char_is(Lexer *lexer, char c) {
   if (c == lexer->content[lexer->position]) {
     return 1;
@@ -165,6 +217,11 @@ int lexer_char_is(Lexer *lexer, char c) {
   return 0;
 }
 
+// The function is_escape_seq() returns, if the given char is equal to an escape
+// character.
+// @param c The char to compare.
+// @return boolean True, if the given character is an escape char, otherwise
+// false.
 int is_escape_seq(char c) {
   if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
     return 1;
@@ -175,8 +232,7 @@ int is_escape_seq(char c) {
 void lexer_trim_left(Lexer *lexer) {
   // NOTE:White space Characters: Blank space, newline, horizontal tab, carriage
   // return and form feed.
-  while (check_boundery(lexer) && isspace(lexer->content[lexer->position]) &&
-         !is_escape_seq(lexer->content[lexer->position])) {
+  while (check_boundery(lexer) && isspace(lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
   }
 }
@@ -214,9 +270,11 @@ int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 
 Token lexer_next(Lexer *lexer) {
-  lexer_trim_left(lexer);
-
   Token token;
+  lexer_trim_left(lexer);
+  if (is_escape_seq(lexer->content[lexer->position])) {
+    return lexer_invalid_token(lexer);
+  }
 
   token.content = &lexer->content[lexer->position];
   if (lexer->position > lexer->content_lenght) {
@@ -409,22 +467,31 @@ int main(int argc, char *argv[]) {
 
   (void)argc;
   (void)argv;
-  // char *content_to_parse =
-      // "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo "
-      // "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1      ";
-  size_t len = strlen(content_to_parse);
-  Lexer lexer = lexer_new(content_to_parse, len, 0);
 
-  while (lexer.content_lenght - 1 >= lexer.position) {
-    Token t = lexer_next(&lexer);
-    char *temp;
-    char *tofree_temp = temp = malloc(t.size * sizeof(char));
-    strncpy(temp, t.content, t.size);
-    temp[t.size] = 0;
-    printf("%s form type %u\n", temp, t.kind);
-    free(tofree_temp);
+  size_t size = 32;
+  char return_buffer[size];
+  int iter = 32;
+  while (feof(stdin) == 0) {
+    // char *content_to_parse = readline(stdin, size, return_buffer);
+    char *content_to_parse = fgets(return_buffer, size, stdin);
+    // char *content_to_parse =
+    // "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo "
+    // "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1      ";
+    size_t len = strlen(content_to_parse);
+    Lexer lexer = lexer_new(content_to_parse, len, 0);
+
+    while (lexer.content_lenght - 1 >= lexer.position) {
+      Token t = lexer_next(&lexer);
+      char *temp;
+      char *tofree_temp = temp = malloc(t.size * sizeof(char));
+      strncpy(temp, t.content, t.size);
+      temp[t.size] = 0;
+      printf("%s form type %u\n", temp, t.kind);
+      free(tofree_temp);
+      // iter--;
+    }
+    // iter--;
   }
-
   char *h = "Succses";
   printf("%s\n", h);
 
