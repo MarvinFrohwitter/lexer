@@ -218,18 +218,6 @@ int lexer_char_is(Lexer *lexer, char c) {
   return 0;
 }
 
-// The function is_escape_seq() returns, if the given char is equal to an escape
-// character.
-// @param c The char to compare.
-// @return boolean True, if the given character is an escape char, otherwise
-// false.
-int is_escape_seq(char c) {
-  if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
-    return 1;
-  }
-  return 0;
-}
-
 // The function lexer_trim_left() consumes the characters from the left side of
 // the given content. If the content matches isspace().
 // White space Characters: Blank space, newline, horizontal tab, carriage
@@ -241,6 +229,12 @@ void lexer_trim_left(Lexer *lexer) {
   }
 }
 
+// The function lexer_is_keyword() returns, if the lexer has found a keyword of
+// the given length at the current lexer content position.
+// @param lexer The given Lexer that contains the current state.
+// @param length The character length the keyword should have.
+// @return boolean True, if the content at the current position has a keyword,
+// otherwise false.
 int lexer_is_keyword(Lexer *lexer, size_t length) {
   size_t array_count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
 
@@ -254,6 +248,14 @@ int lexer_is_keyword(Lexer *lexer, size_t length) {
   return 0;
 }
 
+// The function lexer_is_punctuator() returns, if the lexer has found a
+// punctuator of the given length at the current lexer content position.
+// @param lexer The given Lexer that contains the current state.
+// @param length The character length the punctuator should have.
+// @param max The maximum length a punctuator is searched by. 0 if the complete
+// default list of punctuators should be searched thru.
+// @return boolean True, if the content at the current position has a punctuator
+// of given length, otherwise false.
 int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
   if (max == 0) {
     max = sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]) - 1;
@@ -269,6 +271,11 @@ int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
   return 0;
 }
 
+// The function lexer_check_punctuator_lookahead() computes, if the next
+// character can also be part of the punctuator.
+// @param lexer The given Lexer that contains the current state.
+// @return boolean True, if the next character is also part of the punctuator,
+// otherwise false.
 int lexer_check_punctuator_lookahead(Lexer *lexer) {
 
   if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') &&
@@ -322,6 +329,19 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
     lexer_chop_char(lexer, 2);
   } else {
     lexer_chop_char(lexer, 1);
+    return 0;
+  }
+  return 1;
+}
+
+// ===========================================================================
+// The function is_escape_seq() returns, if the given char is equal to an escape
+// character.
+// @param c The char to compare.
+// @return boolean True, if the given character is an escape char, otherwise
+// false.
+int is_escape_seq(char c) {
+  if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
     return 1;
   }
   return 0;
@@ -330,6 +350,8 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
 int is_sybol_alnum(char c) { return isalnum(c) || c == '_'; }
 int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
+
+// ===========================================================================
 
 Token lexer_next(Lexer *lexer) {
   Token token;
@@ -378,7 +400,6 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  // TODO: For hex do 2+6 itterations than chaeck e.g.'0xAABB88'
   if (isdigit(lexer->content[lexer->position])) {
     token.kind = NUMBER;
     token.size = lexer->position;
@@ -447,7 +468,7 @@ Token lexer_next(Lexer *lexer) {
       token.kind = PUNCTUATOR;
       lexer->position = lexer->position - 1;
 
-      if (lexer_check_punctuator_lookahead(lexer)) {
+      if (!lexer_check_punctuator_lookahead(lexer)) {
         token.size = 1;
         return token;
       }
