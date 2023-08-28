@@ -182,5 +182,5 @@ int lexer_check_punctuator_lookahead(Lexer *lexer);
 int lexer_check_boundery(Lexer *lexer);
 
 int is_escape_seq(char c);
-int is_sybol_alpha(char c);
+int is_sybol_alnum_and_(char c);
 int is_sybol_alpha_and_(char c);

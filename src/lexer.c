@@ -347,9 +347,8 @@ int is_escape_seq(char c) {
   return 0;
 }
 
-int is_sybol_alnum(char c) { return isalnum(c) || c == '_'; }
-int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
+int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 
 // ===========================================================================
 
@@ -381,19 +380,8 @@ Token lexer_next(Lexer *lexer) {
         if (!lexer_check_boundery(lexer)) {
           return lexer_error(lexer);
         }
-      } else if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
-        lexer_chop_char(lexer, 1);
-
       } else {
         lexer_chop_char(lexer, 1);
-
-        // NOTE: Parser task.
-        // The escape char is escaped/interpreted before the lexer handels
-        // the char.
-        fprintf(stderr,
-                "ERROR: Unreachable! Unknown STRING char: %c occured. \n",
-                lexer->content[lexer->position]);
-        return lexer_error(lexer);
       }
     }
     token.size = lexer->position - token.size;
@@ -454,7 +442,7 @@ Token lexer_next(Lexer *lexer) {
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);
     while (lexer_check_boundery(lexer) &&
-           is_sybol_alnum(lexer->content[lexer->position])) {
+           is_sybol_alnum_and_(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
     token.size = lexer->position - token.size;
@@ -498,7 +486,6 @@ Token lexer_error(Lexer *lexer) {
 }
 
 int main(void) {
-
 
   // size_t size = 32;
   // char return_buffer[size];
