@@ -5,8 +5,8 @@
 #include <stdlib.h>
 #include <string.h>
 
-#include "../../gutils/gutils.h"
 #define GUTILS_H_IMPLEMENATION
+#include "../../gutils/gutils.h"
 #include "./lexer.h"
 
 // The function lexer_new() creates the new state of a lexer.
@@ -224,7 +224,8 @@ int lexer_char_is(Lexer *lexer, char c) {
 // return and form feed.
 // @param lexer The given Lexer that contains the current state.
 void lexer_trim_left(Lexer *lexer) {
-  while (lexer_check_boundery(lexer) && isspace(lexer->content[lexer->position])) {
+  while (lexer_check_boundery(lexer) &&
+         isspace(lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
   }
 }
@@ -347,7 +348,18 @@ int is_escape_seq(char c) {
   return 0;
 }
 
+// The function is_sybol_alnum_and_() computes the, if the characters in the
+// name of an identifier is part of the alnum group and the underscore.
+// @param c The character to check for.
+// @return boolean True, if the given character is part of the alnum group and
+// the additional underscore.
 int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
+
+// The function is_sybol_alpha_and_() computes the, if the characters in the
+// name of an identifier is part of the alpha group and the underscore.
+// @param c The character to check for.
+// @return boolean True, if the given character is part of the alpha group and
+// the additional underscore.
 int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 
 // ===========================================================================
@@ -422,7 +434,8 @@ Token lexer_next(Lexer *lexer) {
 
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
-    while (lexer_check_boundery(lexer) && isalpha(lexer->content[lexer->position])) {
+    while (lexer_check_boundery(lexer) &&
+           isalpha(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
 
