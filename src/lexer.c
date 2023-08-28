@@ -476,19 +476,18 @@ Token lexer_error(Lexer *lexer) {
   return lexer_invalid_token(lexer);
 }
 
-int main(int argc, char *argv[]) {
+int main(void) {
 
-  (void)argc;
-  (void)argv;
 
-  size_t size = 32;
-  char return_buffer[size];
-  while (feof(stdin) == 0) {
+  // size_t size = 32;
+  // char return_buffer[size];
+  // while (feof(stdin) == 0) {
     // char *content_to_parse = readline(stdin, size, return_buffer);
     // char *content_to_parse = fgets(return_buffer, size, stdin);
+  // }
     char *content_to_parse =
-    "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo";
-    // "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1 ";
+    "do or int BUS hallo  0xBBAACC main(void){return 0\"klaer\";} 23 hallo"
+    "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1 ";
     size_t len = strlen(content_to_parse);
     Lexer lexer = lexer_new(content_to_parse, len, 0);
 
@@ -501,7 +500,6 @@ int main(int argc, char *argv[]) {
       printf("%s form type %u\n", temp, t.kind);
       free(tofree_temp);
     }
-  }
   char *h = "Succses";
   printf("%s\n", h);
 
