@@ -95,12 +95,12 @@ typedef struct Punctuator {
   char *htag_t;
   char *hhtag_t;
 
-  // char *langecolon_t = lbracket_t;    // '<: = ['
-  // char *colonrange_t = rbracket_t;    // ':> = ]'
-  // char *langelmod_t = lbrace_t;       // '<% = {'
-  // char *kangelmod_t = rbrace_t;       // '%> = }'
-  // char *modcolon_t = htag_t;          // '%: = #'
-  // char *modcolonmodcolon_t = hhtag_t; // '%:%: = ##'
+  /* char *langecolon_t = lbracket_t;    // '<: = [' */
+  /* char *colonrange_t = rbracket_t;    // ':> = ]' */
+  /* char *langelmod_t = lbrace_t;       // '<% = {' */
+  /* char *kangelmod_t = rbrace_t;       // '%> = }' */
+  /* char *modcolon_t = htag_t;          // '%: = #' */
+  /* char *modcolonmodcolon_t = hhtag_t; // '%:%: = ##' */
 
 } Punctuator;
 
@@ -142,6 +142,7 @@ typedef struct TokenVarient {
   PreprocessingToken preprocessing_token;
 } TokenVarient;
 
+/* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
   KEYWORD,
   NUMBER,
@@ -165,6 +166,8 @@ typedef struct Lexer {
 
 } Lexer;
 
+/* ========================================================================== */
+
 Lexer lexer_new(char *content, size_t size, size_t position);
 Lexer *lexer_token_set_keywords(Lexer *lexer);
 Lexer *lexer_token_set_punctuator(Lexer *lexer);
@@ -181,6 +184,18 @@ int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
 int lexer_check_punctuator_lookahead(Lexer *lexer);
 int lexer_check_boundery(Lexer *lexer);
 
+/* ========================================================================== */
+
 int is_escape_seq(char c);
 int is_sybol_alnum_and_(char c);
 int is_sybol_alpha_and_(char c);
+
+/* ========================================================================== */
+
+
+
+
+
+
+
+
