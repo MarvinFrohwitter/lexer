@@ -562,14 +562,13 @@ Token lexer_error(Lexer *lexer) {
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
 
-  /* Plus one for the current char the lexer has failed on */
-  /* and +1 for the Null-Terminator. */
   Token t = lexer_trace_token(lexer);
 
   fprintf(stderr, "token length: %zu\n", t.size);
 
   char *pstring;
-  char *tofree_pstring = pstring = malloc(sizeof(char) * t.size-2);
+  char *tofree_pstring = pstring = malloc(sizeof(char) * t.size);
+
   for (size_t i = 0; i < t.size; i++) {
     pstring[i] = t.content[i];
   }
@@ -609,9 +608,10 @@ int main(void) {
   //     hallo" "void  9   HASE  while 0xB4  \"jkkl\naer\" \"nijt\" .. ... <<=
   //     // -1 ";
 
-  // char *content_to_parse = "int hallo 0xM 0xZZ 0xBBAA88 0xB4812ABDBDF \n 0xB4
-  // -1 ";
-  char *content_to_parse = "\t0xM 0xBBAA88 int";
+  char *content_to_parse =
+      "int hallo 0xM 0xB 0xAAZZ 0xBBAA88 0xB4812ABDBDF \n 0xB4 -1 ";
+
+  // char *content_to_parse = "1e+4 int 3e-6 long 0xBBAA88";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
