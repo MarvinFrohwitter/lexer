@@ -528,16 +528,15 @@ Token lexer_next(Lexer *lexer) {
 /* @param lexer The Lexer that will be modified. */
 /* @param string_t The litteral string the found token should be copied to. */
 void lexer_trace_token(Lexer *lexer, char *string_t) {
-
   size_t current_lexer_posion = lexer->position;
-  // TODO: Add escape seq to the check
-  while (lexer->position != 0 && lexer->position[lexer->content] != ' ') {
+
+  while (lexer->position != 0 && lexer->content[lexer->position] != ' ' &&
+         !is_escape_seq(lexer->content[lexer->position])) {
     lexer->position = lexer->position - 1;
   }
 
-  /* Plus 1 for the char where the lexer has faild. */
-  size_t string_len = current_lexer_posion - lexer->position + 1;
-  strncpy(string_t, &lexer->content[lexer->position], string_len);
+  size_t string_len = current_lexer_posion - lexer->position;
+  strncpy(string_t, &lexer->content[lexer->position + 1], string_len);
   lexer->position = current_lexer_posion;
 }
 
@@ -592,7 +591,7 @@ int main(void) {
 
   // char *content_to_parse = "int hallo 0xM 0xZZ 0xBBAA88 0xB4812ABDBDF \n 0xB4
   // -1 ";
-  char *content_to_parse = "0xM 0xBBAA88 int";
+  char *content_to_parse = "\t0xM 0xBBAA88 int";
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
