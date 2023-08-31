@@ -526,8 +526,9 @@ Token lexer_next(Lexer *lexer) {
 
 /* The function lexer_trace_token() try's to detect the complete broken token */
 /* @param lexer The Lexer that will be modified. */
-/* @param string_t The litteral string the found token should be copied to. */
-void lexer_trace_token(Lexer *lexer, char *string_t) {
+/* @param string_t The literal string the found token should be copied to. */
+/* @return string_len The length of the found token. */
+Token lexer_trace_token(Lexer *lexer) {
   size_t current_lexer_posion = lexer->position;
 
   while (lexer->position != 0 && lexer->content[lexer->position] != ' ' &&
@@ -535,44 +536,63 @@ void lexer_trace_token(Lexer *lexer, char *string_t) {
     lexer->position = lexer->position - 1;
   }
 
-  size_t string_len = current_lexer_posion - lexer->position;
-  strncpy(string_t, &lexer->content[lexer->position + 1], string_len);
-  lexer->position = current_lexer_posion;
+  Token t;
+  if (lexer->position == 0) {
+    t.size = current_lexer_posion - lexer->position + 1;
+  } else {
+    t.size = current_lexer_posion - lexer->position;
+    lexer->position = lexer->position + 1;
+  }
+  t.content = &lexer->content[lexer->position];
+  t.kind = ERROR;
+
+  return t;
 }
 
 /* The function lexer_error() handels the cases if a default token should be
  */
-/* returned or an explicit errror has to be handelt. As well as print */
+/* returned or an explicit error has to be handelt. As well as print */
 /* the corresponding error message to standard error */
 /* @param lexer The Lexer that will be modified. */
 /* @return Token The ERROR token.  */
 Token lexer_error(Lexer *lexer) {
 
+  size_t current_lexer_posion = lexer->position;
   /* ----------------------------------------------------------------------- */
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
 
   /* Plus one for the current char the lexer has failed on */
   /* and +1 for the Null-Terminator. */
-  char *string_t = malloc(sizeof(char) * lexer->position + 1 + 1);
-  lexer_trace_token(lexer, string_t);
-  size_t token_len = strlen(string_t);
+  Token t = lexer_trace_token(lexer);
+
+  fprintf(stderr, "token length: %zu\n", t.size);
+
+  char *pstring;
+  char *tofree_pstring = pstring = malloc(sizeof(char) * t.size-2);
+  for (size_t i = 0; i < t.size; i++) {
+    pstring[i] = t.content[i];
+  }
+  pstring[t.size] = '\0';
 
   fprintf(stderr, "-----------------------------------\n");
-  fprintf(stderr, "ERROR: Broken Token! [%s] was given\n", string_t);
+  fprintf(stderr, "ERROR: Broken Token! [%s] was given\n", pstring);
   fprintf(stderr, "Faild at CHAR:%c\n", lexer->content[lexer->position]);
   fprintf(stderr, "         POS:%zu\n", lexer->position);
   fprintf(stderr, "-----------------------------------\n");
-  free(string_t);
 
+  free(tofree_pstring);
+
+  Token token;
+  token.kind = ERROR;
+  token.size = t.size;
+  token.content = &lexer->content[lexer->position];
+
+  lexer->position = current_lexer_posion;
   if (lexer_check_boundery(lexer)) {
     lexer_chop_char(lexer, 1);
   }
 
-  Token token;
-  token.kind = ERROR;
-  token.size = token_len;
-  token.content = &lexer->content[lexer->position - token_len];
   return token;
 }
 

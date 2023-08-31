@@ -177,9 +177,12 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer);
 Lexer *lexer_token_set_string_literal(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
 Token lexer_error(Lexer *lexer);
-void lexer_trace_token(Lexer *lexer, char *string_t);
+Token lexer_trace_token(Lexer *lexer);
 Token lexer_invalid_token(Lexer *lexer);
 Token lexer_chop_char(Lexer *lexer, size_t count);
+
+Token lexer_check_is_number(Lexer *lexer, Token *token);
+
 void lexer_trim_left(Lexer *lexer);
 int lexer_next_char_is(Lexer *lexer, char c);
 int lexer_char_is(Lexer *lexer, char c);
@@ -195,5 +198,3 @@ int is_sybol_alnum_and_(char c);
 int is_sybol_alpha_and_(char c);
 
 /* ========================================================================== */
-
-Token lexer_check_is_number(Lexer *lexer, Token *token);
