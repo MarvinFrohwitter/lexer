@@ -36,6 +36,9 @@ Lexer *lexer_token_set_string_literal(Lexer *lexer) {
   return lexer;
 }
 
+/* The variable that defines the escape characters. */
+char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
+
 /* The variable PUNCTUATORS is a pointer to the array of single tokens of type
  */
 /* PUNCTUATOR. It contains the tokens to match on. */
@@ -345,6 +348,41 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
   return 1;
 }
 
+Token lexer_check_is_number(Lexer *lexer, Token *token) {
+  int is_escape = 0;
+  size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
+  token->kind = NUMBER;
+  token->size = lexer->position;
+  lexer_chop_char(lexer, 1);
+
+  if (lexer->content[lexer->position - 1] == '0' && lexer_char_is(lexer, 'x')) {
+    lexer_chop_char(lexer, 1);
+    for (size_t j = 0; j < length; j++) {
+      if (lexer_char_is(lexer, ESCAPE[j])) {
+        is_escape = 1;
+      }
+    }
+    if (is_escape || lexer_char_is(lexer, ' ')) {
+      return lexer_error(lexer);
+    }
+    while (isxdigit(lexer->content[lexer->position]) &&
+           lexer_check_boundery(lexer)) {
+      lexer_chop_char(lexer, 1);
+    }
+    if (!lexer_char_is(lexer, ' ') || is_escape) {
+      return lexer_error(lexer);
+    }
+  } else {
+    while (lexer_check_boundery(lexer) &&
+           isdigit(lexer->content[lexer->position]) &&
+           !is_escape_seq(lexer->content[lexer->position])) {
+      lexer_chop_char(lexer, 1);
+    }
+  }
+  token->size = lexer->position - token->size;
+  return *token;
+}
+
 /* ========================================================================= */
 
 /* The function is_escape_seq() returns, if the given char is equal to an escape
@@ -360,7 +398,8 @@ int is_escape_seq(char c) {
   return 0;
 }
 
-/* The function is_sybol_alnum_and_() computes the, if the characters in the */
+/* The function is_sybol_alnum_and_() computes the, if the characters in the
+ */
 /* name of an identifier is part of the alnum group and the underscore. */
 /* @param c The character to check for. */
 /* @return boolean True, if the given character is part of the alnum group and
@@ -368,7 +407,8 @@ int is_escape_seq(char c) {
 /* the additional underscore. */
 int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 
-/* The function is_sybol_alpha_and_() computes the, if the characters in the */
+/* The function is_sybol_alpha_and_() computes the, if the characters in the
+ */
 /* name of an identifier is part of the alpha group and the underscore. */
 /* @param c The character to check for. */
 /* @return boolean True, if the given character is part of the alpha group and
@@ -376,10 +416,12 @@ int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 /* the additional underscore. */
 int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 
-/* ========================================================================= */
+/* =========================================================================
+ */
 
 /* The function lexer_next() computes the token by type, size and contents. */
-/* Token Kind that can be detected are KEYWORD, NUMBER, IDENTIFIER, CONSTANT, */
+/* Token Kind that can be detected are KEYWORD, NUMBER, IDENTIFIER, CONSTANT,
+ */
 /* STRINGLITERAL, PUNCTUATOR, INVALID */
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
@@ -420,33 +462,7 @@ Token lexer_next(Lexer *lexer) {
   }
 
   if (isdigit(lexer->content[lexer->position])) {
-    token.kind = NUMBER;
-    token.size = lexer->position;
-    lexer_chop_char(lexer, 1);
-
-    if (lexer->content[lexer->position - 1] == '0' &&
-        lexer_char_is(lexer, 'x')) {
-      lexer_chop_char(lexer, 1);
-      for (size_t i = 1; i <= 6; i++) {
-        if (isxdigit(lexer->content[lexer->position]) &&
-            lexer_check_boundery(lexer)) {
-          lexer_chop_char(lexer, 1);
-        } else {
-          return lexer_error(lexer);
-        }
-      }
-      if (!lexer_char_is(lexer, ' ')) {
-        return lexer_error(lexer);
-      }
-    } else {
-      while (lexer_check_boundery(lexer) &&
-             isdigit(lexer->content[lexer->position]) &&
-             !is_escape_seq(lexer->content[lexer->position])) {
-        lexer_chop_char(lexer, 1);
-      }
-    }
-    token.size = lexer->position - token.size;
-    return token;
+    return lexer_check_is_number(lexer, &token);
   }
 
   if (isalpha(lexer->content[lexer->position])) {
@@ -508,18 +524,57 @@ Token lexer_next(Lexer *lexer) {
   return token;
 }
 
-/* The function lexer_error() handels the cases if a default token should be */
+/* The function lexer_trace_token() try's to detect the complete broken token */
+/* @param lexer The Lexer that will be modified. */
+/* @param string_t The litteral string the found token should be copied to. */
+void lexer_trace_token(Lexer *lexer, char *string_t) {
+
+  size_t current_lexer_posion = lexer->position;
+  // TODO: Add escape seq to the check
+  while (lexer->position != 0 && lexer->position[lexer->content] != ' ') {
+    lexer->position = lexer->position - 1;
+  }
+
+  /* Plus 1 for the char where the lexer has faild. */
+  size_t string_len = current_lexer_posion - lexer->position + 1;
+  strncpy(string_t, &lexer->content[lexer->position], string_len);
+  lexer->position = current_lexer_posion;
+}
+
+/* The function lexer_error() handels the cases if a default token should be
+ */
 /* returned or an explicit errror has to be handelt. As well as print */
 /* the corresponding error message to standard error */
 /* @param lexer The Lexer that will be modified. */
-/* @return Token The default invalid token.  */
+/* @return Token The ERROR token.  */
 Token lexer_error(Lexer *lexer) {
-  fprintf(stderr, "ERROR: Broken Token! [%c] was given\n",
-          lexer->content[lexer->position]);
-  fprintf(stderr, "    CHAR:%c\n", lexer->content[lexer->position]);
-  fprintf(stderr, "    POS:%zu\n", lexer->position);
 
-  return lexer_invalid_token(lexer);
+  /* ----------------------------------------------------------------------- */
+  /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
+  /* ----------------------------------------------------------------------- */
+
+  /* Plus one for the current char the lexer has failed on */
+  /* and +1 for the Null-Terminator. */
+  char *string_t = malloc(sizeof(char) * lexer->position + 1 + 1);
+  lexer_trace_token(lexer, string_t);
+  size_t token_len = strlen(string_t);
+
+  fprintf(stderr, "-----------------------------------\n");
+  fprintf(stderr, "ERROR: Broken Token! [%s] was given\n", string_t);
+  fprintf(stderr, "Faild at CHAR:%c\n", lexer->content[lexer->position]);
+  fprintf(stderr, "         POS:%zu\n", lexer->position);
+  fprintf(stderr, "-----------------------------------\n");
+  free(string_t);
+
+  if (lexer_check_boundery(lexer)) {
+    lexer_chop_char(lexer, 1);
+  }
+
+  Token token;
+  token.kind = ERROR;
+  token.size = token_len;
+  token.content = &lexer->content[lexer->position - token_len];
+  return token;
 }
 
 int main(void) {
@@ -530,10 +585,15 @@ int main(void) {
   /* char *content_to_parse = readline(stdin, size, return_buffer); */
   /* char *content_to_parse = fgets(return_buffer, size, stdin); */
   /* } */
-  char *content_to_parse =
-      "do or int BUS hallo  0xBBAA88 main(void){return 0\"kla7$er\";} 23 hallo"
-      "void  9   HASE  while   \"jkkl\naer\" \"nijt\" .. ... <<= // -1 ";
-      size_t len = strlen(content_to_parse);
+  // char *content_to_parse =
+  //     "do or int BUS hallo  0xBBAA88 main(void){return 0\"kla7$er\";} 23
+  //     hallo" "void  9   HASE  while 0xB4  \"jkkl\naer\" \"nijt\" .. ... <<=
+  //     // -1 ";
+
+  // char *content_to_parse = "int hallo 0xM 0xZZ 0xBBAA88 0xB4812ABDBDF \n 0xB4
+  // -1 ";
+  char *content_to_parse = "0xM 0xBBAA88 int";
+  size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
   while (lexer.content_lenght - 1 >= lexer.position) {

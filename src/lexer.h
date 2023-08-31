@@ -1,3 +1,5 @@
+#include <ctype.h>
+#include <stddef.h>
 typedef struct Keyword {
   char *auto_t;
   char *break_t;
@@ -144,13 +146,14 @@ typedef struct TokenVarient {
 
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
-  KEYWORD,
+  INVALID,
+  ERROR,
   NUMBER,
-  IDENTIFIER,
-  CONSTANT,
+  KEYWORD,
   STRINGLITERAL,
+  IDENTIFIER,
   PUNCTUATOR,
-  INVALID
+  CONSTANT
 } Kind;
 typedef struct Token {
   Kind kind;
@@ -174,6 +177,7 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer);
 Lexer *lexer_token_set_string_literal(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
 Token lexer_error(Lexer *lexer);
+void lexer_trace_token(Lexer *lexer, char *string_t);
 Token lexer_invalid_token(Lexer *lexer);
 Token lexer_chop_char(Lexer *lexer, size_t count);
 void lexer_trim_left(Lexer *lexer);
@@ -192,10 +196,4 @@ int is_sybol_alpha_and_(char c);
 
 /* ========================================================================== */
 
-
-
-
-
-
-
-
+Token lexer_check_is_number(Lexer *lexer, Token *token);
