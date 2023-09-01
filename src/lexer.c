@@ -524,7 +524,8 @@ Token lexer_next(Lexer *lexer) {
   return token;
 }
 
-/* The function lexer_trace_token() try's to detect the complete broken token */
+/* The function lexer_trace_token() try's to detect the first  part of the */
+/* broken token */
 /* @param lexer The Lexer that will be modified. */
 /* @param string_t The literal string the found token should be copied to. */
 /* @return string_len The length of the found token. */
@@ -558,39 +559,84 @@ Token lexer_trace_token(Lexer *lexer) {
 Token lexer_error(Lexer *lexer) {
 
   size_t current_lexer_posion = lexer->position;
+  char c = lexer->content[lexer->position];
   /* ----------------------------------------------------------------------- */
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
 
   Token t = lexer_trace_token(lexer);
 
-  fprintf(stderr, "token length: %zu\n", t.size);
-
+  /* Allocate memory for the prefix string of the token. */
   char *pstring;
   char *tofree_pstring = pstring = malloc(sizeof(char) * t.size);
 
+  /* Add the chars of the first part from the lexer to the pstring string */
+  /* manually. */
   for (size_t i = 0; i < t.size; i++) {
     pstring[i] = t.content[i];
   }
   pstring[t.size] = '\0';
 
-  fprintf(stderr, "-----------------------------------\n");
-  fprintf(stderr, "ERROR: Broken Token! [%s] was given\n", pstring);
-  fprintf(stderr, "Faild at CHAR:%c\n", lexer->content[lexer->position]);
-  fprintf(stderr, "         POS:%zu\n", lexer->position);
-  fprintf(stderr, "-----------------------------------\n");
+  size_t preserve_lexer_posion = lexer->position;
+  /* Compute the second part of the token after the fail point. */
+  lexer->position = current_lexer_posion;
+  lexer_chop_char(lexer, 1);
+  size_t k = 0;
+  while (lexer_check_boundery(lexer)) {
+    if (lexer_char_is(lexer, ' ') ||
+        is_escape_seq(lexer->content[lexer->position])) {
+      break;
+    }
+    lexer_chop_char(lexer, 1);
+    k++;
+  }
 
-  free(tofree_pstring);
+  /* Combine the to parts of the assumed token. */
+  /* Allocate memory for the tail string of the token. */
+  char *pstring_tail;
+  char *tofree_pstring_tail = pstring_tail = malloc(sizeof(char) * k + 1);
 
+  /* Add the chars of the second part from the lexer to the tail string */
+  /* manually. */
+  for (size_t j = 0; j < k; j++) {
+    pstring_tail[j] = lexer->content[current_lexer_posion + 1 + j];
+  }
+  pstring_tail[k] = '\0';
+
+  /* Allocate memory for the final combined string of the token. */
+  char *final_token;
+  char *tofree_final_token = final_token =
+      malloc(sizeof(char) * (strlen(pstring) + strlen(pstring_tail)));
+
+  /* Add the to parts of the pstring and pstring_tail together to the */
+  /* final_token string. */
+  strcpy(final_token, pstring);
+  strcat(final_token, pstring_tail);
+
+  /* Print the Error Message. */
+  fprintf(stderr, "\n");
+  fprintf(stderr, "================= ERROR: Broken Token! =================\n");
+  fprintf(stderr, "ERROR: The first chars are:                     [%s]\n",
+          pstring);
+  fprintf(stderr, "ERROR: The assumed second part of the token is: [%s]\n",
+          pstring_tail);
+  fprintf(stderr, "ERROR: The assumed final broken token:          [%s]\n",
+          final_token);
+  fprintf(stderr, "Faild at CHAR: [%c]\n", c);
+  fprintf(stderr, "         POS:  [%zu]\n", current_lexer_posion);
+  fprintf(stderr, "--------------------------------------------------------\n");
+  fprintf(stderr, "\n");
+
+  /* Create the final Error Token to return. */
   Token token;
   token.kind = ERROR;
-  token.size = t.size;
-  token.content = &lexer->content[lexer->position];
+  token.size = strlen(final_token);
+  token.content = &lexer->content[preserve_lexer_posion];
 
-  lexer->position = current_lexer_posion;
-  if (lexer_check_boundery(lexer)) {
-    lexer_chop_char(lexer, 1);
-  }
+  /* Free the allocated memory for the individual parts of the token string. */
+  free(tofree_pstring);
+  free(tofree_pstring_tail);
+  free(tofree_final_token);
 
   return token;
 }
@@ -609,7 +655,7 @@ int main(void) {
   //     // -1 ";
 
   char *content_to_parse =
-      "int hallo 0xM 0xB 0xAAZZ 0xBBAA88 0xB4812ABDBDF \n 0xB4 -1 ";
+      "int hallo 0xM 0xB 0xAAZYXW 0xCCBBAA88 0xB4812ABDBDF \n 0xB4 -1 ";
 
   // char *content_to_parse = "1e+4 int 3e-6 long 0xBBAA88";
   size_t len = strlen(content_to_parse);
