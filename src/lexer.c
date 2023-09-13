@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define GUTILS_H_IMPLEMENATION
+#define GUTILS_IMPLEMENATION
 #include "../../gutils/gutils.h"
 #include "./lexer.h"
 
@@ -348,14 +348,27 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
   return 1;
 }
 
-Token lexer_check_is_number(Lexer *lexer, Token *token) {
+// TODO: let scientific notation be a thing like 2e-3
+// TODO: support chars after number like 56L
+
+/* The function lexer_check_is_number() computes if the given part to 'lex' is a
+ * number. It then computes the corresponding token or calls the lexer error
+ * token handler method. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @param token The token that will be modified and contains the final token
+ * that can also contain the error token that is passed back up in the call
+ * stack. */
+/* @return int The error code of the corresponding action result. It returns one
+ * if the function computes a number in the token or 0 if the token is the error
+ * token. */
+int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_escape = 0;
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   token->kind = NUMBER;
   token->size = lexer->position;
   lexer_chop_char(lexer, 1);
 
-  if (lexer->content[lexer->position - 1] == '0' && lexer_char_is(lexer, 'x')) {
+  if (lexer->content[lexer->position - 1] == '0' && (lexer_char_is(lexer, 'x') || lexer_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 1);
     for (size_t j = 0; j < length; j++) {
       if (lexer_char_is(lexer, ESCAPE[j])) {
@@ -363,14 +376,29 @@ Token lexer_check_is_number(Lexer *lexer, Token *token) {
       }
     }
     if (is_escape || lexer_char_is(lexer, ' ')) {
-      return lexer_error(lexer);
+      {
+        Token t = lexer_error(lexer);
+
+        token->content = t.content;
+        token->size = t.size;
+        token->kind = t.kind;
+        return 0;
+      }
     }
+
     while (isxdigit(lexer->content[lexer->position]) &&
            lexer_check_boundery(lexer)) {
       lexer_chop_char(lexer, 1);
     }
     if (!lexer_char_is(lexer, ' ') || is_escape) {
-      return lexer_error(lexer);
+      {
+        Token t = lexer_error(lexer);
+
+        token->content = t.content;
+        token->size = t.size;
+        token->kind = t.kind;
+        return 0;
+      }
     }
   } else {
     while (lexer_check_boundery(lexer) &&
@@ -380,7 +408,7 @@ Token lexer_check_is_number(Lexer *lexer, Token *token) {
     }
   }
   token->size = lexer->position - token->size;
-  return *token;
+  return 1;
 }
 
 /* ========================================================================= */
@@ -462,7 +490,16 @@ Token lexer_next(Lexer *lexer) {
   }
 
   if (isdigit(lexer->content[lexer->position])) {
-    return lexer_check_is_number(lexer, &token);
+
+    if (!lexer_check_is_number(lexer, &token)) {
+      fprintf(stderr,
+              "ERROR: The lexer can not computet the token as part of a "
+              "number!\n");
+      fprintf(stderr,
+              "--------------------------------------------------------\n");
+    }
+
+    return token;
   }
 
   if (isalpha(lexer->content[lexer->position])) {

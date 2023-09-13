@@ -181,7 +181,7 @@ Token lexer_trace_token(Lexer *lexer);
 Token lexer_invalid_token(Lexer *lexer);
 Token lexer_chop_char(Lexer *lexer, size_t count);
 
-Token lexer_check_is_number(Lexer *lexer, Token *token);
+int lexer_check_is_number(Lexer *lexer, Token *token);
 
 void lexer_trim_left(Lexer *lexer);
 int lexer_next_char_is(Lexer *lexer, char c);
