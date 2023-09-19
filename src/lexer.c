@@ -348,7 +348,6 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
   return 1;
 }
 
-// TODO: let scientific notation be a thing like 2e-3
 // TODO: support chars after number like 56L
 
 /* The function lexer_check_is_number() computes if the given part to 'lex' is a
@@ -377,29 +376,16 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       }
     }
     if (is_escape || lexer_char_is(lexer, ' ')) {
-      {
-        Token t = lexer_error(lexer);
-
-        token->content = t.content;
-        token->size = t.size;
-        token->kind = t.kind;
-        return 0;
-      }
+      goto errortoken;
     }
 
     while (isxdigit(lexer->content[lexer->position]) &&
            lexer_check_boundery(lexer)) {
       lexer_chop_char(lexer, 1);
     }
-    if (!lexer_char_is(lexer, ' ') || is_escape) {
-      {
-        Token t = lexer_error(lexer);
 
-        token->content = t.content;
-        token->size = t.size;
-        token->kind = t.kind;
-        return 0;
-      }
+    if (!lexer_char_is(lexer, ' ') || is_escape) {
+      goto errortoken;
     }
   } else {
     while (lexer_check_boundery(lexer) &&
@@ -407,9 +393,44 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
            !is_escape_seq(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
+
+    if (!lexer_check_boundery(lexer)) {
+      goto sizecheck;
+    }
+    lexer_chop_char(lexer, 1);
+    if (lexer->content[lexer->position - 1] == 'e' &&
+        (lexer_char_is(lexer, '-') || lexer_char_is(lexer, '+')) &&
+        isdigit(lexer->content[lexer->position + 1])) {
+
+      lexer_chop_char(lexer, 1);
+      while (isdigit(lexer->content[lexer->position]) &&
+             lexer_check_boundery(lexer)) {
+
+        lexer_chop_char(lexer, 1);
+      }
+      if (!lexer_char_is(lexer, ' ')) {
+        goto errortoken;
+      }
+      goto sizecheck;
+    }
+    lexer->position = lexer->position - 1;
+    if (!lexer_char_is(lexer, ' ')) {
+      goto errortoken;
+    }
   }
+
+sizecheck:
   token->size = lexer->position - token->size;
   return 1;
+
+errortoken : {
+  Token t = lexer_error(lexer);
+
+  token->content = t.content;
+  token->size = t.size;
+  token->kind = t.kind;
+  return 0;
+}
 }
 
 /* ========================================================================= */
@@ -607,6 +628,7 @@ Token lexer_error(Lexer *lexer) {
   /* Allocate memory for the prefix string of the token. */
   char *pstring;
   char *tofree_pstring = pstring = malloc(sizeof(char) * t.size);
+  assert(pstring != NULL && "By more RAM !!");
 
   /* Add the chars of the first part from the lexer to the pstring string */
   /* manually. */
@@ -633,6 +655,7 @@ Token lexer_error(Lexer *lexer) {
   /* Allocate memory for the tail string of the token. */
   char *pstring_tail;
   char *tofree_pstring_tail = pstring_tail = malloc(sizeof(char) * k + 1);
+  assert(pstring_tail != NULL && "By more RAM !!");
 
   /* Add the chars of the second part from the lexer to the tail string */
   /* manually. */
@@ -645,6 +668,7 @@ Token lexer_error(Lexer *lexer) {
   char *final_token;
   char *tofree_final_token = final_token =
       malloc(sizeof(char) * (strlen(pstring) + strlen(pstring_tail)));
+  assert(final_token != NULL && "By more RAM !!");
 
   /* Add the to parts of the pstring and pstring_tail together to the */
   /* final_token string. */
@@ -693,24 +717,31 @@ int main(void) {
   //     // -1 ";
 
   char *content_to_parse = "int "
-                           "long "
-                           "void \n "
+                           "4567 "
 
-                           "hallo "
+                           // "long "
+                           // "void \n "
 
-                           "0xB "
-                           "0xB4 "
-                           "0XCCBBA "
-                           "0xCCBBAA88 "
-                           "0xB4812ABDBDF "
-                           // Debug fail tests:
-                           "1e+4 "
+                           // "hallo "
+
+                           // "0xB "
+                           // "0xB4 "
+                           // "0XCCBBA "
+                           // "0xCCBBAA88 "
+                           // "0xB4812ABDBDF "
+                           // // Debug fail tests:
+                           // "1e+4 "
                            // "3e-6 "
+                           // "3e+662337 "
+                           // "3e-637 "
+                           // "33e+z "
+
+                           // "3e-6623e7 "
                            // "0xM "
                            // "0xAAZYXW "
 
                            // Debug wrong token tests:
-                           "-1 ";
+                           "-76 ";
 
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
@@ -719,6 +750,7 @@ int main(void) {
     Token t = lexer_next(&lexer);
     char *temp;
     char *tofree_temp = temp = malloc(t.size * sizeof(char));
+    assert(temp != NULL && "By more RAM !!");
     strncpy(temp, t.content, t.size);
     temp[t.size] = 0;
     printf("%s form type %u\n", temp, t.kind);
