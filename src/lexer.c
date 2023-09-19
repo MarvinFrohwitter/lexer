@@ -368,7 +368,8 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   token->size = lexer->position;
   lexer_chop_char(lexer, 1);
 
-  if (lexer->content[lexer->position - 1] == '0' && (lexer_char_is(lexer, 'x') || lexer_char_is(lexer, 'X'))) {
+  if (lexer->content[lexer->position - 1] == '0' &&
+      (lexer_char_is(lexer, 'x') || lexer_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 1);
     for (size_t j = 0; j < length; j++) {
       if (lexer_char_is(lexer, ESCAPE[j])) {
@@ -691,10 +692,26 @@ int main(void) {
   //     hallo" "void  9   HASE  while 0xB4  \"jkkl\naer\" \"nijt\" .. ... <<=
   //     // -1 ";
 
-  char *content_to_parse =
-      "int hallo 0xM 0xB 0xAAZYXW 0xCCBBAA88 0xB4812ABDBDF \n 0xB4 -1 ";
+  char *content_to_parse = "int "
+                           "long "
+                           "void \n "
 
-  // char *content_to_parse = "1e+4 int 3e-6 long 0xBBAA88";
+                           "hallo "
+
+                           "0xB "
+                           "0xB4 "
+                           "0XCCBBA "
+                           "0xCCBBAA88 "
+                           "0xB4812ABDBDF "
+                           // Debug fail tests:
+                           "1e+4 "
+                           // "3e-6 "
+                           // "0xM "
+                           // "0xAAZYXW "
+
+                           // Debug wrong token tests:
+                           "-1 ";
+
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
