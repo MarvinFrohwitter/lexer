@@ -348,8 +348,6 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
   return 1;
 }
 
-// TODO: support point char so floats are a thing
-
 /* The function lexer_check_is_number() computes if the given part to 'lex' is a
  * number. It then computes the corresponding token or calls the lexer error
  * token handler method. */
@@ -389,7 +387,8 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
     }
   } else {
     while (lexer_check_boundery(lexer) &&
-           isdigit(lexer->content[lexer->position]) &&
+           (isdigit(lexer->content[lexer->position]) ||
+            lexer->content[lexer->position] == '.') &&
            !is_escape_seq(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
@@ -773,14 +772,15 @@ int main(void) {
   //     // -1 ";
 
   char *content_to_parse = "int "
-                           "4567L "
-                           "4567ULL "
-                           "long "
-                           "long "
-                           "4567 "
+                           // "4567L "
+                           // "4567ULL "
+                           // "long "
+                           // "long "
+                           "4567. "
+                           "4567.2345 "
 
-                           "1234ULLH "
-                           "long "
+                           // "1234ULLH "
+                           // "long "
                            // "void \n "
 
                            // "hallo "
