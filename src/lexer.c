@@ -348,7 +348,7 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
   return 1;
 }
 
-// TODO: support chars after number like 56L
+// TODO: support point char so floats are a thing
 
 /* The function lexer_check_is_number() computes if the given part to 'lex' is a
  * number. It then computes the corresponding token or calls the lexer error
@@ -395,7 +395,7 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
     }
 
     if (!lexer_check_boundery(lexer)) {
-      goto sizecheck;
+      goto postfixcheck;
     }
     lexer_chop_char(lexer, 1);
     if (lexer->content[lexer->position - 1] == 'e' &&
@@ -411,15 +411,49 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       if (!lexer_char_is(lexer, ' ')) {
         goto errortoken;
       }
-      goto sizecheck;
+      goto postfixcheck;
     }
     lexer->position = lexer->position - 1;
-    if (!lexer_char_is(lexer, ' ')) {
+
+    if (!lexer_char_is(lexer, ' ') && !lexer_char_is(lexer, 'L') &&
+        !lexer_char_is(lexer, 'l') && !lexer_char_is(lexer, 'U') &&
+        !lexer_char_is(lexer, 'u')) {
       goto errortoken;
     }
   }
 
-sizecheck:
+postfixcheck:
+  // The worst thing that could happen is 134ULL or 32455ull so U, L are the
+  // chars
+
+  // The 4th iteration handles the next char so, if the next char is not a
+  // space the default catches the error.
+  for (size_t i = 0; i < 4; i++) {
+    switch (lexer->content[lexer->position]) {
+    case 'L':
+    case 'l':
+    case 'U':
+    case 'u': {
+      lexer_chop_char(lexer, 1);
+      break;
+    }
+    case ' ': {
+      if (lexer_check_boundery(lexer)) {
+        lexer_chop_char(lexer, 1);
+      }
+      i = 3;
+      break;
+    }
+    default:
+      if (lexer_check_boundery(lexer)) {
+        fprintf(stderr, "postfixcheck faild with:%c at %zu\n",
+                lexer->content[lexer->position], lexer->position);
+        goto errortoken;
+        return 0;
+      }
+    }
+  }
+
   token->size = lexer->position - token->size;
   return 1;
 
@@ -583,7 +617,7 @@ Token lexer_next(Lexer *lexer) {
   return token;
 }
 
-/* The function lexer_trace_token() try's to detect the first  part of the */
+/* The function lexer_trace_token() try's to detect the first part of the */
 /* broken token */
 /* @param lexer The Lexer that will be modified. */
 /* @param string_t The literal string the found token should be copied to. */
@@ -617,8 +651,15 @@ Token lexer_trace_token(Lexer *lexer) {
 /* @return Token The ERROR token.  */
 Token lexer_error(Lexer *lexer) {
 
+  int checkend = 0;
+  char *pstring;
+  char *tofree_pstring;
+  char *pstring_tail = "\0";
+  char *tofree_pstring_tail = "\0";
+  char *final_token;
+  char *tofree_final_token = "\0";
   size_t current_lexer_posion = lexer->position;
-  char c = lexer->content[lexer->position];
+  const char c = lexer->content[lexer->position];
   /* ----------------------------------------------------------------------- */
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
@@ -626,9 +667,8 @@ Token lexer_error(Lexer *lexer) {
   Token t = lexer_trace_token(lexer);
 
   /* Allocate memory for the prefix string of the token. */
-  char *pstring;
-  char *tofree_pstring = pstring = malloc(sizeof(char) * t.size);
-  assert(pstring != NULL && "By more RAM !!");
+  tofree_pstring = pstring = malloc(sizeof(char) * t.size);
+  assert(pstring != NULL && "Buy more RAM !!");
 
   /* Add the chars of the first part from the lexer to the pstring string */
   /* manually. */
@@ -640,7 +680,16 @@ Token lexer_error(Lexer *lexer) {
   size_t preserve_lexer_posion = lexer->position;
   /* Compute the second part of the token after the fail point. */
   lexer->position = current_lexer_posion;
-  lexer_chop_char(lexer, 1);
+
+  if (lexer_check_boundery(lexer)) {
+    lexer->position = lexer->position + 1;
+  } else {
+    // NOTE: That is very unlikely to happen. Only at the end of the content.
+
+    checkend = 1;
+    goto handle;
+  }
+
   size_t k = 0;
   while (lexer_check_boundery(lexer)) {
     if (lexer_char_is(lexer, ' ') ||
@@ -653,9 +702,8 @@ Token lexer_error(Lexer *lexer) {
 
   /* Combine the to parts of the assumed token. */
   /* Allocate memory for the tail string of the token. */
-  char *pstring_tail;
-  char *tofree_pstring_tail = pstring_tail = malloc(sizeof(char) * k + 1);
-  assert(pstring_tail != NULL && "By more RAM !!");
+  tofree_pstring_tail = pstring_tail = malloc(sizeof(char) * k + 1);
+  assert(pstring_tail != NULL && "Buy more RAM !!");
 
   /* Add the chars of the second part from the lexer to the tail string */
   /* manually. */
@@ -664,16 +712,24 @@ Token lexer_error(Lexer *lexer) {
   }
   pstring_tail[k] = '\0';
 
+handle:
   /* Allocate memory for the final combined string of the token. */
-  char *final_token;
-  char *tofree_final_token = final_token =
-      malloc(sizeof(char) * (strlen(pstring) + strlen(pstring_tail)));
-  assert(final_token != NULL && "By more RAM !!");
+  if (checkend) {
+    tofree_final_token = final_token =
+        calloc(strlen(pstring) + 1 + 1, sizeof(char));
+  } else {
+    tofree_final_token = final_token =
+        calloc(strlen(pstring) + strlen(pstring_tail) + 1, sizeof(char));
+  }
+  assert(final_token != NULL && "Buy more RAM !!");
 
   /* Add the to parts of the pstring and pstring_tail together to the */
   /* final_token string. */
   strcpy(final_token, pstring);
-  strcat(final_token, pstring_tail);
+
+  if (!checkend) {
+    strcat(final_token, pstring_tail);
+  }
 
   /* Print the Error Message. */
   fprintf(stderr, "\n");
@@ -717,9 +773,14 @@ int main(void) {
   //     // -1 ";
 
   char *content_to_parse = "int "
+                           "4567L "
+                           "4567ULL "
+                           "long "
+                           "long "
                            "4567 "
 
-                           // "long "
+                           "1234ULLH "
+                           "long "
                            // "void \n "
 
                            // "hallo "
@@ -735,13 +796,14 @@ int main(void) {
                            // "3e+662337 "
                            // "3e-637 "
                            // "33e+z "
+                           // "4567A "
 
                            // "3e-6623e7 "
                            // "0xM "
                            // "0xAAZYXW "
 
                            // Debug wrong token tests:
-                           "-76 ";
+                           "76 ";
 
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
@@ -750,7 +812,7 @@ int main(void) {
     Token t = lexer_next(&lexer);
     char *temp;
     char *tofree_temp = temp = malloc(t.size * sizeof(char));
-    assert(temp != NULL && "By more RAM !!");
+    assert(temp != NULL && "Buy more RAM !!");
     strncpy(temp, t.content, t.size);
     temp[t.size] = 0;
     printf("%s form type %u\n", temp, t.kind);
