@@ -422,9 +422,6 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   }
 
 postfixcheck:
-  // The worst thing that could happen is 134ULL or 32455ull so U, L are the
-  // chars
-
   // The 4th iteration handles the next char so, if the next char is not a
   // space the default catches the error.
   for (size_t i = 0; i < 4; i++) {
@@ -440,7 +437,7 @@ postfixcheck:
       if (lexer_check_boundery(lexer)) {
         lexer_chop_char(lexer, 1);
       }
-      i = 3;
+      i = 4;
       break;
     }
     default:
@@ -464,6 +461,24 @@ errortoken : {
   token->kind = t.kind;
   return 0;
 }
+}
+
+// TODO Documentaion
+int lexer_check_is_preproc(Lexer *lexer, Token *token) {
+
+  token->size = lexer->position;
+  lexer_chop_char(lexer, 1);
+  if (lexer->position >= lexer->content_lenght) {
+    lexer->position = lexer->position - 1;
+    return 0;
+  }
+
+  while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
+    lexer_chop_char(lexer, 1);
+  }
+  token->size = lexer->position - token->size;
+
+  return 1;
 }
 
 /* ========================================================================= */
@@ -520,6 +535,17 @@ Token lexer_next(Lexer *lexer) {
     return lexer_invalid_token(lexer);
   }
 
+  // Check for preprocessing
+  if (lexer_char_is(lexer, '#') && lexer_check_boundery(lexer)) {
+    token.kind = PREPROCESSING;
+
+    if (!lexer_check_is_preproc(lexer, &token)) {
+      return lexer_error(lexer);
+    };
+    return token;
+  }
+
+  // Check for string literals
   if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
     if (!lexer_next_char_is(lexer, '"') && !lexer_check_boundery(lexer)) {
       return lexer_error(lexer);
@@ -775,7 +801,7 @@ int main(void) {
                            // "4567L "
                            // "4567ULL "
                            // "long "
-                           // "long "
+                           "long "
                            "4567. "
                            "4567.2345 "
 
@@ -802,8 +828,12 @@ int main(void) {
                            // "0xM "
                            // "0xAAZYXW "
 
+                           "# \n"
+                           "## \n"
+                           "### vaois das is\n"
+                           "hallo \n"
                            // Debug wrong token tests:
-                           "76 ";
+                           "420";
 
   size_t len = strlen(content_to_parse);
   Lexer lexer = lexer_new(content_to_parse, len, 0);
@@ -815,7 +845,7 @@ int main(void) {
     assert(temp != NULL && "Buy more RAM !!");
     strncpy(temp, t.content, t.size);
     temp[t.size] = 0;
-    printf("%s form type %u\n", temp, t.kind);
+    printf("[%s] form type %u\n", temp, t.kind);
     free(tofree_temp);
   }
   char *h = "Succses";
