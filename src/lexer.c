@@ -450,7 +450,7 @@ postfixcheck:
     }
   }
 
-  token->size = lexer->position - token->size;
+  token->size = lexer->position - token->size - 1;
   return 1;
 
 errortoken : {
@@ -476,6 +476,7 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
   while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
     lexer_chop_char(lexer, 1);
   }
+  // For the tailing space remove another char from the token size.
   token->size = lexer->position - token->size;
 
   return 1;
@@ -799,7 +800,8 @@ int main(void) {
 
   char *content_to_parse = "int "
                            // "4567L "
-                           // "4567ULL "
+                           "4567ULL "
+                           "47 "
                            // "long "
                            "long "
                            "4567. "
