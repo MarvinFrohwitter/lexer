@@ -463,7 +463,12 @@ errortoken : {
 }
 }
 
-// TODO Documentaion
+/* The function lexer_check_is_preproc() computes the token for the
+ * preprocessor. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @param token The token that will be modified and contains the final token
+ * that is passed up in the call stack. */
+/* @return boolean 1, if the function check is passed, otherwise 0. */
 int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 
   token->size = lexer->position;
