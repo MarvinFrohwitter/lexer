@@ -7,7 +7,11 @@
 
 #define GUTILS_IMPLEMENATION
 #include "../../gutils/gutils.h"
-#include "./lexer.h"
+
+// #define EXLEX_IMPLEMENTAION
+// #include "exlex.h"
+
+#include "lexer.h"
 
 /* The function lexer_new() creates the new state of a lexer. */
 /* @param content The content that the lexer has to tokenise. */
@@ -16,144 +20,22 @@
 /* @return Lexer The function returns a new initilized lexer. */
 Lexer lexer_new(char *content, size_t size, size_t position) {
   Lexer lexer;
-  lexer_token_set_string_literal(&lexer);
-  lexer_token_set_keywords(&lexer);
-  lexer_token_set_punctuator(&lexer);
   lexer.content_lenght = size;
   lexer.content = content;
   lexer.position = position;
 
-  return lexer;
-}
+#ifdef EXLEX_IMPLEMENTAION
 
-/* The function lexer_token_set_string_literal() sets the qoute to the */
-/* internal lexer token. */
-/* @param lexer The Lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_string_literal(Lexer *lexer) {
+  lexer_token_set_string_literal(&lexer);
+  lexer_token_set_keywords(&lexer);
+  lexer_token_set_punctuator(&lexer);
 
-  lexer->token_varient.token_kind.string_literal.quote = '"';
-  return lexer;
-}
+#endif // EXLEX_IMPLEMENTAION
 
-/* The variable that defines the escape characters. */
-char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
-
-/* The variable PUNCTUATORS is a pointer to the array of single tokens of type
- */
-/* PUNCTUATOR. It contains the tokens to match on. */
-const char *PUNCTUATORS[] = {"[", "]", "(", ")", "{", "}", ".", "&", "*",
-                             "+", "-", "~", "|", "/", "%", "<", ">", "^",
-                             "|", "?", ":", ";", "=", ",", NULL};
-
-/* The function ptr lexer_token_set_punctuator() is the function that sets the
- */
-/* internal lexer tokens of type PUNCTUATOR. */
-/* @param lexer The lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_punctuator(Lexer *lexer) {
-  lexer->token_varient.token_kind.punctuator.lbracket_t = "[";
-  lexer->token_varient.token_kind.punctuator.rbracket_t = "]";
-  lexer->token_varient.token_kind.punctuator.lparen_t = "(";
-  lexer->token_varient.token_kind.punctuator.rparen_t = ")";
-  lexer->token_varient.token_kind.punctuator.lbrace_t = "{";
-  lexer->token_varient.token_kind.punctuator.rbrace_t = "}";
-  lexer->token_varient.token_kind.punctuator.point_t = ".";
-  lexer->token_varient.token_kind.punctuator.pderef_t = "->";
-  lexer->token_varient.token_kind.punctuator.increment_t = "++";
-  lexer->token_varient.token_kind.punctuator.decrement_t = "--";
-  lexer->token_varient.token_kind.punctuator.band_t = "&";
-  lexer->token_varient.token_kind.punctuator.mul_t = "*";
-  lexer->token_varient.token_kind.punctuator.add_t = "+";
-  lexer->token_varient.token_kind.punctuator.sub_t = "-";
-  lexer->token_varient.token_kind.punctuator.bnot_t = "~";
-  lexer->token_varient.token_kind.punctuator.not_t = "|";
-  lexer->token_varient.token_kind.punctuator.div_t = "/";
-  lexer->token_varient.token_kind.punctuator.mod_t = "%";
-  lexer->token_varient.token_kind.punctuator.leftshift_t = "<<";
-  lexer->token_varient.token_kind.punctuator.rightshift_t = ">>";
-  lexer->token_varient.token_kind.punctuator.lange_t = "<";
-  lexer->token_varient.token_kind.punctuator.range_t = ">";
-  lexer->token_varient.token_kind.punctuator.loreq_t = "<=";
-  lexer->token_varient.token_kind.punctuator.goreq_t = ">=";
-  lexer->token_varient.token_kind.punctuator.equal_t = "==";
-  lexer->token_varient.token_kind.punctuator.noteq_t = "!=";
-  lexer->token_varient.token_kind.punctuator.bxor_t = "^";
-  lexer->token_varient.token_kind.punctuator.bor_t = "|";
-  lexer->token_varient.token_kind.punctuator.land_t = "&&";
-  lexer->token_varient.token_kind.punctuator.lor_t = "||";
-  lexer->token_varient.token_kind.punctuator.ask_t = "?";
-  lexer->token_varient.token_kind.punctuator.colon_t = ":";
-  lexer->token_varient.token_kind.punctuator.semicolon_t = ";";
-  lexer->token_varient.token_kind.punctuator.variadic_t = "...";
-  lexer->token_varient.token_kind.punctuator.assign_t = "=";
-  lexer->token_varient.token_kind.punctuator.muleq_t = "*=";
-  lexer->token_varient.token_kind.punctuator.diveq_t = "/=";
-  lexer->token_varient.token_kind.punctuator.modeq_t = "%=";
-  lexer->token_varient.token_kind.punctuator.addeq_t = "+=";
-  lexer->token_varient.token_kind.punctuator.subeq_t = "-=";
-  lexer->token_varient.token_kind.punctuator.leftshifteq_t = "<<=";
-  lexer->token_varient.token_kind.punctuator.rightshifteq_t = ">>=";
-  lexer->token_varient.token_kind.punctuator.bandeq_t = "&=";
-  lexer->token_varient.token_kind.punctuator.bxoreq_t = "^=";
-  lexer->token_varient.token_kind.punctuator.boreq_t = "|=";
-  lexer->token_varient.token_kind.punctuator.comma_t = ",";
-  lexer->token_varient.token_kind.punctuator.htag_t = "#";
-  lexer->token_varient.token_kind.punctuator.hhtag_t = "##";
 
   return lexer;
 }
 
-/* The variable KEYWORDS is a pointer to the array of single tokens of type */
-/* KEYWORD. It contains the tokens to match on. */
-const char *KEYWORDS[] = {"auto",     "break",   "case",   "char",     "const",
-                          "continue", "default", "do",     "double",   "else",
-                          "enum",     "extern",  "float",  "for",      "goto",
-                          "if",       "int",     "long",   "register", "return",
-                          "short",    "signed",  "sizeof", "static",   "struct",
-                          "switch",   "typedef", "union",  "unsigned", "void",
-                          "volatile", "while",   NULL};
-
-/* The function ptr lexer_token_set_keywords() is the function that sets the */
-/* internal lexer tokens of type KEYWORD. */
-/* @param lexer The lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_keywords(Lexer *lexer) {
-  lexer->token_varient.token_kind.keyword.auto_t = "auto";
-  lexer->token_varient.token_kind.keyword.break_t = "break";
-  lexer->token_varient.token_kind.keyword.case_t = "case";
-  lexer->token_varient.token_kind.keyword.char_t = "char";
-  lexer->token_varient.token_kind.keyword.const_t = "const";
-  lexer->token_varient.token_kind.keyword.continue_t = "continue";
-  lexer->token_varient.token_kind.keyword.default_t = "default";
-  lexer->token_varient.token_kind.keyword.do_t = "do";
-  lexer->token_varient.token_kind.keyword.double_t = "double";
-  lexer->token_varient.token_kind.keyword.else_t = "else";
-  lexer->token_varient.token_kind.keyword.enum_t = "enum";
-  lexer->token_varient.token_kind.keyword.extern_t = "extern";
-  lexer->token_varient.token_kind.keyword.float_t = "float";
-  lexer->token_varient.token_kind.keyword.for_t = "for";
-  lexer->token_varient.token_kind.keyword.goto_t = "goto";
-  lexer->token_varient.token_kind.keyword.if_t = "if";
-  lexer->token_varient.token_kind.keyword.int_t = "int";
-  lexer->token_varient.token_kind.keyword.long_t = "long";
-  lexer->token_varient.token_kind.keyword.register_t = "register";
-  lexer->token_varient.token_kind.keyword.return_t = "return";
-  lexer->token_varient.token_kind.keyword.short_t = "short";
-  lexer->token_varient.token_kind.keyword.signed_t = "signed";
-  lexer->token_varient.token_kind.keyword.sizeof_t = "sizeof";
-  lexer->token_varient.token_kind.keyword.static_t = "static";
-  lexer->token_varient.token_kind.keyword.struct_t = "struct";
-  lexer->token_varient.token_kind.keyword.switch_t = "switch";
-  lexer->token_varient.token_kind.keyword.typedef_t = "typedef";
-  lexer->token_varient.token_kind.keyword.union_t = "union";
-  lexer->token_varient.token_kind.keyword.unsigned_t = "unsigned";
-  lexer->token_varient.token_kind.keyword.void_t = "void";
-  lexer->token_varient.token_kind.keyword.volatile_t = "volatile";
-  lexer->token_varient.token_kind.keyword.while_t = "while";
-
-  return lexer;
-}
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
 /* count. So it cuts of the content that the lexer tokenise form the left. */
