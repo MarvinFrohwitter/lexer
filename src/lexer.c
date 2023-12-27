@@ -32,10 +32,8 @@ Lexer lexer_new(char *content, size_t size, size_t position) {
 
 #endif // EXLEX_IMPLEMENTAION
 
-
   return lexer;
 }
-
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
 /* count. So it cuts of the content that the lexer tokenise form the left. */
@@ -44,7 +42,6 @@ Lexer lexer_new(char *content, size_t size, size_t position) {
 /* content. */
 /* @return Lexer the that was passed in and was modified. */
 Token lexer_chop_char(Lexer *lexer, size_t count) {
-
   for (size_t i = 0; i < count; i++) {
     if (!lexer_check_boundery(lexer)) {
       return lexer_error(lexer);
@@ -335,7 +332,7 @@ postfixcheck:
   token->size = lexer->position - token->size - 1;
   return 1;
 
-errortoken : {
+errortoken: {
   Token t = lexer_error(lexer);
 
   token->content = t.content;
@@ -432,6 +429,7 @@ Token lexer_next(Lexer *lexer) {
     };
     return token;
   }
+// TODO: Add support for comments with line comments like // and multi-line like /* */
 
   // Check for string literals
   if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
@@ -670,75 +668,4 @@ handle:
   free(tofree_final_token);
 
   return token;
-}
-
-int main(void) {
-
-  /* size_t size = 32; */
-  /* char return_buffer[size]; */
-  /* while (feof(stdin) == 0) { */
-  /* char *content_to_parse = readline(stdin, size, return_buffer); */
-  /* char *content_to_parse = fgets(return_buffer, size, stdin); */
-  /* } */
-  // char *content_to_parse =
-  //     "do or int BUS hallo  0xBBAA88 main(void){return 0\"kla7$er\";} 23
-  //     hallo" "void  9   HASE  while 0xB4  \"jkkl\naer\" \"nijt\" .. ... <<=
-  //     // -1 ";
-
-  char *content_to_parse = "int "
-                           // "4567L "
-                           "4567ULL "
-                           "47 "
-                           // "long "
-                           "long "
-                           "4567. "
-                           "4567.2345 "
-
-                           // "1234ULLH "
-                           // "long "
-                           // "void \n "
-
-                           // "hallo "
-
-                           // "0xB "
-                           // "0xB4 "
-                           // "0XCCBBA "
-                           // "0xCCBBAA88 "
-                           // "0xB4812ABDBDF "
-                           // // Debug fail tests:
-                           // "1e+4 "
-                           // "3e-6 "
-                           // "3e+662337 "
-                           // "3e-637 "
-                           // "33e+z "
-                           // "4567A "
-
-                           // "3e-6623e7 "
-                           // "0xM "
-                           // "0xAAZYXW "
-
-                           "# \n"
-                           "## \n"
-                           "### vaois das is\n"
-                           "hallo \n"
-                           // Debug wrong token tests:
-                           "420";
-
-  size_t len = strlen(content_to_parse);
-  Lexer lexer = lexer_new(content_to_parse, len, 0);
-
-  while (lexer.content_lenght - 1 >= lexer.position) {
-    Token t = lexer_next(&lexer);
-    char *temp;
-    char *tofree_temp = temp = malloc(t.size * sizeof(char));
-    assert(temp != NULL && "Buy more RAM !!");
-    strncpy(temp, t.content, t.size);
-    temp[t.size] = 0;
-    printf("[%s] form type %u\n", temp, t.kind);
-    free(tofree_temp);
-  }
-  char *h = "Succses";
-  printf("%s\n", h);
-
-  return 0;
 }
