@@ -1,10 +1,10 @@
 # The lexer that tokenise the given C code.
 
-SRC = lexer.c
+SRC = dev-tests.c
 OBJ = ${SRC:.c=.o}
 
 CC = cc
-LIBS =
+LIBS = ../src/lexer.c
 CFLAGS = -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
 
 all: options lexer
@@ -21,4 +21,8 @@ lexer:
 clean:
 	rm -f lexer
 
-.PHONY: all clean options lexer
+test: lexer
+	./lexer
+
+
+.PHONY: all clean options lexer test

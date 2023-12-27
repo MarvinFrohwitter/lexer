@@ -1,3 +1,4 @@
+#include <assert.h>
 #include <stddef.h>
 #include <string.h>
 
@@ -22,6 +23,7 @@ START_TEST(test_lexer_new) {
   ck_assert(base_lexer.position != new_lexer.position);
   ck_assert(1 != 2);
 
+assert(lexer_check_boundery(&new_lexer) != 1);
 
 }
 END_TEST
