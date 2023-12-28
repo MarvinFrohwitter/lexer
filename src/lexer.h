@@ -44,7 +44,8 @@ typedef enum Kind {
   IDENTIFIER,
   PUNCTUATOR,
   CONSTANT,
-  PREPROCESSING
+  PREPROCESSING,
+  COMMENT
 } Kind;
 
 typedef struct Token {
@@ -64,6 +65,8 @@ Token lexer_chop_char(Lexer *lexer, size_t count);
 
 int lexer_check_is_number(Lexer *lexer, Token *token);
 int lexer_check_is_preproc(Lexer *lexer, Token *token);
+int lexer_check_is_str(Lexer *lexer, Token *token);
+int lexer_check_is_comment(Lexer *lexer, Token *token);
 
 void lexer_trim_left(Lexer *lexer);
 int lexer_next_char_is(Lexer *lexer, char c);

@@ -18,7 +18,7 @@ int main(void) {
                            // "long "
                            // "void \n "
 
-                           // "hallo "
+                           "\" Das ist ein string\"hallo "
 
                            // "0xB "
                            // "0xB4 "
@@ -42,6 +42,9 @@ int main(void) {
                            "### vaois das is\n"
                            "hallo \n"
                            // Debug wrong token tests:
+                           // "/* BOB*/"
+                           "// \"Haus Hans\"   lasst\n"
+                           "hallo \n"
                            "420";
 
   size_t len = strlen(content_to_parse);

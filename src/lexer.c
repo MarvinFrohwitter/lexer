@@ -350,7 +350,7 @@ errortoken: {
 /* @return boolean 1, if the function check is passed, otherwise 0. */
 int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 
-  token->size = lexer->position;
+  size_t position = lexer->position;
   lexer_chop_char(lexer, 1);
   if (lexer->position >= lexer->content_lenght) {
     lexer->position = lexer->position - 1;
@@ -360,9 +360,67 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
   while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
     lexer_chop_char(lexer, 1);
   }
-  // For the tailing space remove another char from the token size.
-  token->size = lexer->position - token->size;
 
+  token->size = lexer->position - position;
+
+  return 1;
+}
+
+/* The function lexer_check_is_comment() computes the comment token */
+/* @param lexer The given Lexer that contains the current state. */
+/* @param token The token that will be modified and contains the final token
+ * that is passed up in the call stack. */
+/* @return boolean 1, if the function check is passed, otherwise 0. */
+int lexer_check_is_comment(Lexer *lexer, Token *token) {
+
+  size_t position = lexer->position;
+  lexer_chop_char(lexer, 2);
+  if (!lexer_check_boundery(lexer)) {
+    lexer->position = lexer->position - 1;
+    return 0;
+  }
+
+  while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
+    lexer_check_is_str(lexer, token);
+    lexer_chop_char(lexer, 1);
+  }
+
+  // TODO: Handel just \n in a comment without string quotes
+  token->size = lexer->position - position;
+
+  return 1;
+}
+
+/* The function lexer_check_is_str() computes the possible sting token */
+/* @param lexer The given Lexer that contains the current state. */
+/* @param token The token that will be modified and contains the final token
+ * that is passed up in the call stack. */
+/* @return boolean 1, if the function check is passed, otherwise 0. */
+int lexer_check_is_str(Lexer *lexer, Token *token) {
+
+  if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
+    if (!lexer_next_char_is(lexer, '"') && !lexer_check_boundery(lexer)) {
+      return 0;
+    }
+
+    token->kind = STRINGLITERAL;
+    size_t position = lexer->position;
+    lexer_chop_char(lexer, 1);
+    while (lexer_check_boundery(lexer)) {
+      if (lexer_char_is(lexer, '"')) {
+        lexer_chop_char(lexer, 1);
+        break;
+      } else if (is_escape_seq(lexer->content[lexer->position])) {
+        lexer_chop_char(lexer, 1);
+        if (!lexer_check_boundery(lexer)) {
+          return 0;
+        }
+      } else {
+        lexer_chop_char(lexer, 1);
+      }
+    }
+    token->size = lexer->position - position;
+  }
   return 1;
 }
 
@@ -409,7 +467,9 @@ int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
 Token lexer_next(Lexer *lexer) {
-  Token token;
+  Token token = {0};
+  token.kind = INVALID;
+
   lexer_trim_left(lexer);
   if (is_escape_seq(lexer->content[lexer->position])) {
     return lexer_invalid_token(lexer);
@@ -429,30 +489,25 @@ Token lexer_next(Lexer *lexer) {
     };
     return token;
   }
-// TODO: Add support for comments with line comments like // and multi-line like /* */
+
+  // TODO: Add support for multi-line comments like /* */
+
+  // Check for Comments
+  if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '/') &&
+      lexer_check_boundery(lexer)) {
+
+    if (!lexer_check_is_comment(lexer, &token)) {
+      return lexer_error(lexer);
+    };
+    token.kind = COMMENT;
+    return token;
+  }
 
   // Check for string literals
   if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
-    if (!lexer_next_char_is(lexer, '"') && !lexer_check_boundery(lexer)) {
+    if (!lexer_check_is_str(lexer, &token)) {
       return lexer_error(lexer);
-    }
-    token.kind = STRINGLITERAL;
-    token.size = lexer->position;
-    lexer_chop_char(lexer, 1);
-    while (lexer_check_boundery(lexer)) {
-      if (lexer_char_is(lexer, '"')) {
-        lexer_chop_char(lexer, 1);
-        break;
-      } else if (is_escape_seq(lexer->content[lexer->position])) {
-        lexer_chop_char(lexer, 1);
-        if (!lexer_check_boundery(lexer)) {
-          return lexer_error(lexer);
-        }
-      } else {
-        lexer_chop_char(lexer, 1);
-      }
-    }
-    token.size = lexer->position - token.size;
+    };
     return token;
   }
 
