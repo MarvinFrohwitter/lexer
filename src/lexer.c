@@ -12,7 +12,6 @@
 // #include "exlex.h"
 
 #include "lexer.h"
-
 /* The function lexer_new() creates the new state of a lexer. */
 /* @param content The content that the lexer has to tokenise. */
 /* @param size The content length. */
@@ -84,7 +83,9 @@ int lexer_check_boundery(Lexer *lexer) {
 /* @return boolean True, if the given char c is identical to the next char in */
 /* the content that lexer tokenise. */
 int lexer_next_char_is(Lexer *lexer, char c) {
+
   if (c == lexer->content[lexer->position + 1]) {
+
     return 1;
   }
   return 0;
@@ -371,7 +372,7 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 /* @param token The token that will be modified and contains the final token
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
-int lexer_check_is_comment(Lexer *lexer, Token *token) {
+int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 
   size_t position = lexer->position;
   lexer_chop_char(lexer, 2);
@@ -380,14 +381,20 @@ int lexer_check_is_comment(Lexer *lexer, Token *token) {
     return 0;
   }
 
-  while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
-    lexer_check_is_str(lexer, token);
+  while (lexer_check_boundery(lexer)) {
+    if (is_multi) {
+      if (lexer_char_is(lexer, '*') && lexer_next_char_is(lexer, '/')) {
+        lexer_chop_char(lexer, 2);
+        break;
+      }
+    } else {
+      if (lexer_char_is(lexer, '\n'))
+        break;
+    }
     lexer_chop_char(lexer, 1);
   }
 
-  // TODO: Handel just \n in a comment without string quotes
   token->size = lexer->position - position;
-
   return 1;
 }
 
@@ -490,13 +497,22 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  // TODO: Add support for multi-line comments like /* */
-
   // Check for Comments
   if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '/') &&
       lexer_check_boundery(lexer)) {
 
-    if (!lexer_check_is_comment(lexer, &token)) {
+    if (!lexer_check_is_comment(lexer, &token, 0)) {
+      return lexer_error(lexer);
+    };
+    token.kind = COMMENT;
+    return token;
+  }
+
+  // Check for multi line Comments
+  if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '*') &&
+      lexer_check_boundery(lexer)) {
+
+    if (!lexer_check_is_comment(lexer, &token, 1)) {
       return lexer_error(lexer);
     };
     token.kind = COMMENT;
@@ -511,6 +527,7 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+  // Check for numbers
   if (isdigit(lexer->content[lexer->position])) {
 
     if (!lexer_check_is_number(lexer, &token)) {
@@ -524,6 +541,7 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+  // Check for keywords
   if (isalpha(lexer->content[lexer->position])) {
 
     size_t startpos = token.size = lexer->position;
@@ -544,6 +562,7 @@ Token lexer_next(Lexer *lexer) {
     }
   }
 
+  // Fall throw KEYWORDS to check for identifiers
   if (is_sybol_alpha_and_(lexer->content[lexer->position])) {
     token.kind = IDENTIFIER;
     token.size = lexer->position;
@@ -556,6 +575,8 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+
+  // Check for punctuators
   if (lexer_check_boundery(lexer)) {
     token.size = lexer->position;
     lexer_chop_char(lexer, 1);

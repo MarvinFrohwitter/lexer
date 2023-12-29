@@ -7,18 +7,18 @@ int main(void) {
 
   char *content_to_parse = "int "
                            // "4567L "
-                           "4567ULL "
-                           "47 "
+                           // "4567ULL "
+                           // "47 "
                            // "long "
-                           "long "
-                           "4567. "
-                           "4567.2345 "
+                           // "long "
+                           // "4567. "
+                           // "4567.2345 "
 
                            // "1234ULLH "
                            // "long "
                            // "void \n "
 
-                           "\" Das ist ein string\"hallo "
+                           // "\" Das ist ein string\"hallo "
 
                            // "0xB "
                            // "0xB4 "
@@ -37,12 +37,27 @@ int main(void) {
                            // "0xM "
                            // "0xAAZYXW "
 
-                           "# \n"
-                           "## \n"
-                           "### vaois das is\n"
+                           // "# \n"
+                           // "## \n"
+                           // "### vaois das is\n"
+
                            "hallo \n"
-                           // Debug wrong token tests:
-                           // "/* BOB*/"
+                           "/**/    int\n"
+                           // // Debug wrong token tests:
+                           "/* BOB*/a"
+                           "/*/*\" */    int\n"
+
+                           "/*/*\"\"*/  "
+
+                           "hallo \n"
+                           "// \" */ \n   int"
+
+                           "// /* luchs*/ \n"
+                           "/* BOB \"was ist los\n\"*/\n"
+                           "/* Luchs   */"
+                           "// \"Haus Hans\"   lasst\" IM string \"\n"
+                           "// \"Haus Hans\"   lasst\n"
+                           "// \"Haus Hans\"   Hase \n  \n"
                            "// \"Haus Hans\"   lasst\n"
                            "hallo \n"
                            "420";
@@ -51,7 +66,7 @@ int main(void) {
   Lexer lexer = lexer_new(content_to_parse, len, 0);
 
   while (lexer.content_lenght - 1 >= lexer.position) {
-    Token t = lexer_next(&lexer);
+     Token t = lexer_next(&lexer);
     char *temp;
     char *tofree_temp = temp = malloc(t.size * sizeof(char));
     assert(temp != NULL && "Buy more RAM !!");
