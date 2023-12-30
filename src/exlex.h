@@ -155,7 +155,7 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer);
 
 #endif // EXLEX_H_
 
-#ifdef EXLEX_IMPLEMENTAION
+#ifdef EXLEX_IMPLEMENTATION
 
 /* The function lexer_token_set_string_literal() sets the qoute to the */
 /* internal lexer token. */
@@ -266,4 +266,4 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   return lexer;
 }
 
-#endif // EXLEX_IMPLEMENTAION
+#endif // EXLEX_IMPLEMENTATION

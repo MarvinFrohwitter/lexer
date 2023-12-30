@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define GUTILS_IMPLEMENATION
-#include "../../gutils/gutils.h"
+// #define GUTILS_IMPLEMENTATION
+// #include "../../gutils/gutils.h"
 
-// #define EXLEX_IMPLEMENTAION
+// #define EXLEX_IMPLEMENTATION
 // #include "exlex.h"
 
 #include "lexer.h"
@@ -23,13 +23,13 @@ Lexer lexer_new(char *content, size_t size, size_t position) {
   lexer.content = content;
   lexer.position = position;
 
-#ifdef EXLEX_IMPLEMENTAION
+#ifdef EXLEX_IMPLEMENTATION
 
   lexer_token_set_string_literal(&lexer);
   lexer_token_set_keywords(&lexer);
   lexer_token_set_punctuator(&lexer);
 
-#endif // EXLEX_IMPLEMENTAION
+#endif // EXLEX_IMPLEMENTATION
 
   return lexer;
 }
