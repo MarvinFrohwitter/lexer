@@ -3,6 +3,11 @@
 #ifndef EXLEX_H_
 #define EXLEX_H_
 
+#ifndef EXLEXDEF
+#define EXLEXDEF static inline
+
+#endif // EXLEXDEF
+
 typedef struct Keyword {
   char *auto_t;
   char *break_t;
@@ -149,9 +154,9 @@ typedef struct TokenVarient {
 
 #include "lexer.h"
 
-Lexer *lexer_token_set_string_literal(Lexer *lexer);
-Lexer *lexer_token_set_keywords(Lexer *lexer);
-Lexer *lexer_token_set_punctuator(Lexer *lexer);
+EXLEXDEF Lexer *lexer_token_set_string_literal(Lexer *lexer);
+EXLEXDEF Lexer *lexer_token_set_keywords(Lexer *lexer);
+EXLEXDEF Lexer *lexer_token_set_punctuator(Lexer *lexer);
 
 #endif // EXLEX_H_
 
@@ -161,7 +166,7 @@ Lexer *lexer_token_set_punctuator(Lexer *lexer);
 /* internal lexer token. */
 /* @param lexer The Lexer that will be modified. */
 /* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_string_literal(Lexer *lexer) {
+EXLEXDEF Lexer *lexer_token_set_string_literal(Lexer *lexer) {
 
   lexer->token_varient.token_kind.string_literal.quote = '"';
   return lexer;
@@ -171,7 +176,7 @@ Lexer *lexer_token_set_string_literal(Lexer *lexer) {
 /* internal lexer tokens of type KEYWORD. */
 /* @param lexer The lexer that will be modified. */
 /* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_keywords(Lexer *lexer) {
+EXLEXDEF Lexer *lexer_token_set_keywords(Lexer *lexer) {
   lexer->token_varient.token_kind.keyword.auto_t = "auto";
   lexer->token_varient.token_kind.keyword.break_t = "break";
   lexer->token_varient.token_kind.keyword.case_t = "case";
@@ -213,7 +218,7 @@ Lexer *lexer_token_set_keywords(Lexer *lexer) {
 /* internal lexer tokens of type PUNCTUATOR. */
 /* @param lexer The lexer that will be modified. */
 /* @return Lexer the that was passed in and was modified. */
-Lexer *lexer_token_set_punctuator(Lexer *lexer) {
+EXLEXDEF Lexer *lexer_token_set_punctuator(Lexer *lexer) {
   lexer->token_varient.token_kind.punctuator.lbracket_t = "[";
   lexer->token_varient.token_kind.punctuator.rbracket_t = "]";
   lexer->token_varient.token_kind.punctuator.lparen_t = "(";
