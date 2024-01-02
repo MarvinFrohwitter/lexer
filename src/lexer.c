@@ -12,6 +12,9 @@
 // #include "exlex.h"
 
 #include "lexer.h"
+
+#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
+
 /* The function lexer_new() creates the new state of a lexer. */
 /* @param content The content that the lexer has to tokenise. */
 /* @param size The content length. */
@@ -143,8 +146,8 @@ int lexer_is_keyword(Lexer *lexer, size_t length) {
 /* punctuator of the given length at the current lexer content position. */
 /* @param lexer The given Lexer that contains the current state. */
 /* @param length The character length the punctuator should have. */
-/* @param max The maximum length a punctuator is searched by. 0 if the complete
- */
+/* @param max The maximum length a punctuator is searched by in the list. 0 if
+ * the complete */
 /* default list of punctuators should be searched thru. */
 /* @return boolean True, if the content at the current position has a punctuator
  */
@@ -156,7 +159,7 @@ int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
 
   /* The position of the lexer is on the next char. */
   for (size_t i = 0; i < max; i++) {
-    if (strncmp(PUNCTUATORS[i], &lexer->content[lexer->position - length],
+    if (strncmp(PUNCTUATORS[i], &lexer->content[lexer->position + length - 1],
                 length) == 0) {
       return 1;
     }
@@ -240,20 +243,24 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
  * token. */
 int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_escape = 0;
+  int ispostfix = 0;
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   token->kind = NUMBER;
-  token->size = lexer->position;
-  lexer_chop_char(lexer, 1);
+  size_t pos = lexer->position;
 
-  if (lexer->content[lexer->position - 1] == '0' &&
-      (lexer_char_is(lexer, 'x') || lexer_char_is(lexer, 'X'))) {
-    lexer_chop_char(lexer, 1);
+  if (lexer_char_is(lexer, '0') &&
+      (lexer_next_char_is(lexer, 'x') || lexer_next_char_is(lexer, 'X'))) {
+    lexer_chop_char(lexer, 2);
+
     for (size_t j = 0; j < length; j++) {
       if (lexer_char_is(lexer, ESCAPE[j])) {
         is_escape = 1;
+        break;
       }
     }
-    if (is_escape || lexer_char_is(lexer, ' ')) {
+
+    if (is_escape || lexer_char_is(lexer, ' ') ||
+        !lexer_check_boundery(lexer)) {
       goto errortoken;
     }
 
@@ -262,9 +269,16 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       lexer_chop_char(lexer, 1);
     }
 
-    if (!lexer_char_is(lexer, ' ') || is_escape) {
-      goto errortoken;
+    if (!lexer_check_boundery(lexer)) {
+      goto compute_return;
     }
+
+    // if (!lexer_char_is(lexer, ' ') &&
+    // !is_escape_seq(lexer->content[lexer->position]) &&
+    //     !lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2)) {
+    //   goto errortoken;
+    // }
+
   } else {
     while (lexer_check_boundery(lexer) &&
            (isdigit(lexer->content[lexer->position]) ||
@@ -274,63 +288,75 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
     }
 
     if (!lexer_check_boundery(lexer)) {
-      goto postfixcheck;
+      goto compute_return;
     }
-    lexer_chop_char(lexer, 1);
-    if (lexer->content[lexer->position - 1] == 'e' &&
-        (lexer_char_is(lexer, '-') || lexer_char_is(lexer, '+')) &&
-        isdigit(lexer->content[lexer->position + 1])) {
 
-      lexer_chop_char(lexer, 1);
+    if (lexer_char_is(lexer, 'e') &&
+        (lexer_next_char_is(lexer, '-') || lexer_next_char_is(lexer, '+')) &&
+        isdigit(lexer->content[lexer->position + 2])) {
+
+      lexer_chop_char(lexer, 2);
       while (isdigit(lexer->content[lexer->position]) &&
              lexer_check_boundery(lexer)) {
 
         lexer_chop_char(lexer, 1);
       }
-      if (!lexer_char_is(lexer, ' ')) {
-        goto errortoken;
+
+      if (!lexer_check_boundery(lexer)) {
+        goto compute_return;
       }
       goto postfixcheck;
     }
-    lexer->position = lexer->position - 1;
-
-    if (!lexer_char_is(lexer, ' ') && !lexer_char_is(lexer, 'L') &&
-        !lexer_char_is(lexer, 'l') && !lexer_char_is(lexer, 'U') &&
-        !lexer_char_is(lexer, 'u')) {
-      goto errortoken;
-    }
   }
 
-postfixcheck:
+postfixcheck: {
   // The 4th iteration handles the next char so, if the next char is not a
   // space the default catches the error.
-  for (size_t i = 0; i < 4; i++) {
+  size_t maxiter = 4;
+  for (size_t i = 0; i < maxiter; i++) {
     switch (lexer->content[lexer->position]) {
     case 'L':
     case 'l':
     case 'U':
     case 'u': {
       lexer_chop_char(lexer, 1);
+      ispostfix = 1;
       break;
     }
     case ' ': {
-      if (lexer_check_boundery(lexer)) {
-        lexer_chop_char(lexer, 1);
-      }
-      i = 4;
+      i = maxiter;
       break;
     }
+    case '/':
+      if (lexer_next_char_is(lexer, '/')) {
+        i = maxiter;
+      } else {
+        goto errortoken;
+      }
+
+      break;
+
     default:
-      if (lexer_check_boundery(lexer)) {
+      if (lexer_check_boundery(lexer) &&
+              (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
+          is_escape_seq(lexer->content[lexer->position]))) {
+        i = maxiter;
+        break;
+      } else {
         fprintf(stderr, "postfixcheck faild with:%c at %zu\n",
                 lexer->content[lexer->position], lexer->position);
         goto errortoken;
-        return 0;
       }
     }
   }
+}
+compute_return:
 
-  token->size = lexer->position - token->size - 1;
+  if (ispostfix) {
+    token->size = lexer->position - 1 - pos;
+  } else {
+    token->size = lexer->position - pos;
+  }
   return 1;
 
 errortoken: {
@@ -519,6 +545,9 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+  // TODO: support char strings like 'A' and '\0' maybe it is a number
+  //       (design question)
+
   // Check for string literals
   if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
     if (!lexer_check_is_str(lexer, &token)) {
@@ -547,7 +576,7 @@ Token lexer_next(Lexer *lexer) {
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
     while (lexer_check_boundery(lexer) &&
-           isalpha(lexer->content[lexer->position])) {
+           is_sybol_alpha_and_(lexer->content[lexer->position])) {
       lexer_chop_char(lexer, 1);
     }
 
@@ -575,14 +604,11 @@ Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-
   // Check for punctuators
   if (lexer_check_boundery(lexer)) {
     token.size = lexer->position;
-    lexer_chop_char(lexer, 1);
     if (lexer_is_punctuator(lexer, 1, 0)) {
       token.kind = PUNCTUATOR;
-      lexer->position = lexer->position - 1;
 
       if (!lexer_check_punctuator_lookahead(lexer)) {
         token.size = 1;
@@ -607,9 +633,8 @@ Token lexer_next(Lexer *lexer) {
 /* The function lexer_trace_token() try's to detect the first part of the */
 /* broken token */
 /* @param lexer The Lexer that will be modified. */
-/* @param string_t The literal string the found token should be copied to. */
-/* @return string_len The length of the found token. */
-Token lexer_trace_token(Lexer *lexer) {
+/* @param token The token that will be modified and contains the final token*/
+void lexer_trace_token(Lexer *lexer, Token *token) {
   size_t current_lexer_posion = lexer->position;
 
   while (lexer->position != 0 && lexer->content[lexer->position] != ' ' &&
@@ -617,17 +642,14 @@ Token lexer_trace_token(Lexer *lexer) {
     lexer->position = lexer->position - 1;
   }
 
-  Token t;
   if (lexer->position == 0) {
-    t.size = current_lexer_posion - lexer->position + 1;
+    token->size = current_lexer_posion - lexer->position + 1;
   } else {
-    t.size = current_lexer_posion - lexer->position;
+    token->size = current_lexer_posion - lexer->position;
     lexer->position = lexer->position + 1;
   }
-  t.content = &lexer->content[lexer->position];
-  t.kind = ERROR;
-
-  return t;
+  token->content = &lexer->content[lexer->position];
+  token->kind = ERROR;
 }
 
 /* The function lexer_error() handels the cases if a default token should be
@@ -639,23 +661,20 @@ Token lexer_trace_token(Lexer *lexer) {
 Token lexer_error(Lexer *lexer) {
 
   int checkend = 0;
-  char *pstring;
-  char *tofree_pstring;
-  char *pstring_tail = "\0";
-  char *tofree_pstring_tail = "\0";
-  char *final_token;
-  char *tofree_final_token = "\0";
+  char *pstring, *pstring_tail = 0, *final_token;
   size_t current_lexer_posion = lexer->position;
   const char c = lexer->content[lexer->position];
   /* ----------------------------------------------------------------------- */
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
 
-  Token t = lexer_trace_token(lexer);
+  Token t;
+  lexer_trace_token(lexer, &t);
 
   /* Allocate memory for the prefix string of the token. */
-  tofree_pstring = pstring = malloc(sizeof(char) * t.size);
+  pstring = malloc(sizeof(char) * t.size);
   assert(pstring != NULL && "Buy more RAM !!");
+  pstring[0] = '\0';
 
   /* Add the chars of the first part from the lexer to the pstring string */
   /* manually. */
@@ -689,8 +708,9 @@ Token lexer_error(Lexer *lexer) {
 
   /* Combine the to parts of the assumed token. */
   /* Allocate memory for the tail string of the token. */
-  tofree_pstring_tail = pstring_tail = malloc(sizeof(char) * k + 1);
+  pstring_tail = malloc(sizeof(char) * k + 1);
   assert(pstring_tail != NULL && "Buy more RAM !!");
+  pstring_tail[0] = '\0';
 
   /* Add the chars of the second part from the lexer to the tail string */
   /* manually. */
@@ -702,13 +722,13 @@ Token lexer_error(Lexer *lexer) {
 handle:
   /* Allocate memory for the final combined string of the token. */
   if (checkend) {
-    tofree_final_token = final_token =
-        calloc(strlen(pstring) + 1 + 1, sizeof(char));
+    final_token = calloc(1, (strlen(pstring) + 1 + 1) * sizeof(char));
   } else {
-    tofree_final_token = final_token =
-        calloc(strlen(pstring) + strlen(pstring_tail) + 1, sizeof(char));
+    final_token =
+        calloc(1, (strlen(pstring) + strlen(pstring_tail) + 1) * sizeof(char));
   }
   assert(final_token != NULL && "Buy more RAM !!");
+  final_token[0] = '\0';
 
   /* Add the to parts of the pstring and pstring_tail together to the */
   /* final_token string. */
@@ -739,9 +759,10 @@ handle:
   token.content = &lexer->content[preserve_lexer_posion];
 
   /* Free the allocated memory for the individual parts of the token string. */
-  free(tofree_pstring);
-  free(tofree_pstring_tail);
-  free(tofree_final_token);
+
+  free(pstring);
+  free(pstring_tail);
+  free(final_token);
 
   return token;
 }
