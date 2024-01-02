@@ -1,7 +1,6 @@
 # The lexer that tokenise the given C code.
 
 SRC = dev-tests.c
-OBJ = ${SRC:.c=.o}
 
 CC = cc
 LIBS = ../src/lexer.c
