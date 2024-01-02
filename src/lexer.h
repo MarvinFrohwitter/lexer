@@ -16,23 +16,22 @@ typedef struct Lexer {
 
 /* The variable that defines the escape characters. */
 static const char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
-
 /* The variable PUNCTUATORS is a pointer to the array of single tokens of type
  */
 /* PUNCTUATOR. It contains the tokens to match on. */
-static const char *PUNCTUATORS[] = {"[", "]", "(", ")", "{", "}", ".", "&", "*",
-                                    "+", "-", "~", "|", "/", "%", "<", ">", "^",
-                                    "|", "?", ":", ";", "=", ",", NULL};
+static const char *PUNCTUATORS[] = {",", "]", ")", "=", ";", "{", "}", "&",
+                                    "*", "+", "-", "~", "|", "/", "%", "<", ">",
+                                    "^", "|", "?", ":", "(", "[", ".", NULL};
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
 static const char *KEYWORDS[] = {
-    "auto",     "break",  "case",    "char",   "const",    "continue",
-    "default",  "do",     "double",  "else",   "enum",     "extern",
-    "float",    "for",    "goto",    "if",     "int",      "long",
-    "register", "return", "short",   "signed", "sizeof",   "static",
-    "struct",   "switch", "typedef", "union",  "unsigned", "void",
-    "volatile", "while",  NULL};
+    "auto",     "break",    "size_t", "case",    "char",   "const",
+    "continue", "default",  "do",     "double",  "else",   "enum",
+    "extern",   "float",    "for",    "goto",    "if",     "int",
+    "long",     "register", "return", "short",   "signed", "sizeof",
+    "static",   "struct",   "switch", "typedef", "union",  "unsigned",
+    "void",     "volatile", "while",  NULL};
 
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
@@ -59,7 +58,7 @@ typedef struct Token {
 Lexer lexer_new(char *content, size_t size, size_t position);
 Token lexer_next(Lexer *lexer);
 Token lexer_error(Lexer *lexer);
-Token lexer_trace_token(Lexer *lexer);
+void lexer_trace_token(Lexer *lexer, Token *token);
 Token lexer_invalid_token(Lexer *lexer);
 Token lexer_chop_char(Lexer *lexer, size_t count);
 
