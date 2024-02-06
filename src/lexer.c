@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define GUTILS_IMPLEMENTATION
-// #include "../../gutils/gutils.h"
-
 // #define EXLEX_IMPLEMENTATION
 // #include "exlex.h"
 
@@ -20,22 +17,32 @@
 /* @param size The content length. */
 /* @param The position of the content the lexer should begin tokenise. */
 /* @return Lexer The function returns a new initilized lexer. */
-Lexer lexer_new(char *content, size_t size, size_t position) {
-  Lexer lexer;
-  lexer.content_lenght = size;
-  lexer.content = content;
-  lexer.position = position;
+Lexer *lexer_new(char *content, size_t size, size_t position) {
+  Lexer *lexer = malloc(sizeof(Lexer));
+  if (lexer == NULL) {
+    fprintf(stderr,
+            "ERROR: No more memory for the content to lex can be allocated.\n");
+    return NULL;
+  }
+
+  lexer->content_lenght = size;
+  lexer->content = content;
+  lexer->position = position;
 
 #ifdef EXLEX_IMPLEMENTATION
 
-  lexer_token_set_string_literal(&lexer);
-  lexer_token_set_keywords(&lexer);
-  lexer_token_set_punctuator(&lexer);
+  lexer_token_set_string_literal(lexer);
+  lexer_token_set_keywords(lexer);
+  lexer_token_set_punctuator(lexer);
 
 #endif // EXLEX_IMPLEMENTATION
 
   return lexer;
 }
+
+/* The function lexer_del() frees the allocated lexer. */
+/* @param lexer The given Lexer that contains the current state. */
+void lexer_del(Lexer *lexer) { free(lexer); }
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
 /* count. So it cuts of the content that the lexer tokenise form the left. */
@@ -338,8 +345,8 @@ postfixcheck: {
 
     default:
       if (lexer_check_boundery(lexer) &&
-              (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
-          is_escape_seq(lexer->content[lexer->position]))) {
+          (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
+           is_escape_seq(lexer->content[lexer->position]))) {
         i = maxiter;
         break;
       } else {

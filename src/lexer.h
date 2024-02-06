@@ -1,10 +1,11 @@
+// Copyright (c) 2023 Marvin Frohwitter. All Rights Reserved.
 #include <stddef.h>
 
 #ifndef LEXER_H_
 #define LEXER_H_
 
 typedef struct Lexer {
-  const char *content;
+  char *content;
   size_t content_lenght;
   size_t position;
 
@@ -19,9 +20,9 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
 /* The variable PUNCTUATORS is a pointer to the array of single tokens of type
  */
 /* PUNCTUATOR. It contains the tokens to match on. */
-static const char *PUNCTUATORS[] = {",", "]", ")", "=", ";", "{", "}", "&",
-                                    "*", "+", "-", "~", "|", "/", "%", "<", ">",
-                                    "^", "|", "?", ":", "(", "[", ".", NULL};
+static const char *PUNCTUATORS[] = {",", "]", ")", "=", ";", "{", "}", "&", "*",
+                                    "+", "-", "~", "|", "/", "%", "<", ">", "^",
+                                    "|", "?", ":", "(", "[", ".", NULL};
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
@@ -55,7 +56,8 @@ typedef struct Token {
 
 /* ========================================================================== */
 
-Lexer lexer_new(char *content, size_t size, size_t position);
+Lexer *lexer_new(char *content, size_t size, size_t position);
+void lexer_del(Lexer *lexer);
 Token lexer_next(Lexer *lexer);
 Token lexer_error(Lexer *lexer);
 void lexer_trace_token(Lexer *lexer, Token *token);
