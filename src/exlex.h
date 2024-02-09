@@ -1,274 +1,259 @@
-#include <stddef.h>
-
 #ifndef EXLEX_H_
 #define EXLEX_H_
+#include <assert.h>
+#include <stddef.h>
+#include <string.h>
 
 #ifndef EXLEXDEF
 #define EXLEXDEF static inline
-
 #endif // EXLEXDEF
-
-typedef struct Keyword {
-  char *auto_t;
-  char *break_t;
-  char *case_t;
-  char *char_t;
-  char *const_t;
-  char *continue_t;
-  char *default_t;
-  char *do_t;
-  char *double_t;
-  char *else_t;
-  char *enum_t;
-  char *extern_t;
-  char *float_t;
-  char *for_t;
-  char *goto_t;
-  char *if_t;
-  char *int_t;
-  char *long_t;
-  char *register_t;
-  char *return_t;
-  char *short_t;
-  char *signed_t;
-  char *sizeof_t;
-  char *static_t;
-  char *struct_t;
-  char *switch_t;
-  char *typedef_t;
-  char *union_t;
-  char *unsigned_t;
-  char *void_t;
-  char *volatile_t;
-  char *while_t;
-} Keyword;
-
-typedef struct Identifier {
-  char *char_identifier;
-} Identifier;
-
-typedef struct Constant {
-  size_t int_constant;
-} Constant;
-
-typedef struct StringLiteral {
-  char quote;
-} StringLiteral;
-
-typedef struct Punctuator {
-  char *lbracket_t;
-  char *rbracket_t;
-  char *lparen_t;
-  char *rparen_t;
-  char *lbrace_t;
-  char *rbrace_t;
-  char *point_t;
-  char *pderef_t;
-  char *increment_t;
-  char *decrement_t;
-  char *band_t;
-  char *mul_t;
-  char *add_t;
-  char *sub_t;
-  char *bnot_t;
-  char *not_t;
-  char *div_t;
-  char *mod_t;
-  char *leftshift_t;
-  char *rightshift_t;
-  char *lange_t;
-  char *range_t;
-  char *loreq_t;
-  char *goreq_t;
-  char *equal_t;
-  char *noteq_t;
-  char *bxor_t;
-  char *bor_t;
-  char *land_t;
-  char *lor_t;
-  char *ask_t;
-  char *colon_t;
-  char *semicolon_t;
-  char *variadic_t;
-  char *assign_t;
-  char *muleq_t;
-  char *diveq_t;
-  char *modeq_t;
-  char *addeq_t;
-  char *subeq_t;
-  char *leftshifteq_t;
-  char *rightshifteq_t;
-  char *bandeq_t;
-  char *bxoreq_t;
-  char *boreq_t;
-  char *comma_t;
-  char *htag_t;
-  char *hhtag_t;
-
-  /* char *langecolon_t = lbracket_t;    // '<: = [' */
-  /* char *colonrange_t = rbracket_t;    // ':> = ]' */
-  /* char *langelmod_t = lbrace_t;       // '<% = {' */
-  /* char *kangelmod_t = rbrace_t;       // '%> = }' */
-  /* char *modcolon_t = htag_t;          // '%: = #' */
-  /* char *modcolonmodcolon_t = hhtag_t; // '%:%: = ##' */
-
-} Punctuator;
-
-typedef struct HeaderName {
-  char *header;
-} HeaderName;
-typedef struct PPNumber {
-  size_t ppnumber;
-} PPNumber;
-typedef struct CharacterConstant {
-  char char_constant;
-} CharacterConstant;
-typedef struct NonWhiteSpaceChar {
-  char non_white_space;
-} NonWhiteSpaceChar;
-
-typedef struct PreprocessingToken {
-  HeaderName header_name;
-  Identifier identifier;
-  PPNumber pp_number;
-  CharacterConstant character_constant;
-  StringLiteral string_literal;
-  Punctuator punctuator;
-  NonWhiteSpaceChar non_white_space_char;
-
-} PreprocessingToken;
-
-typedef struct TokenKind {
-  Keyword keyword;
-  Identifier identifier;
-  Constant constant;
-  StringLiteral string_literal;
-  Punctuator punctuator;
-
-} TokenKind;
-
-typedef struct TokenVarient {
-  TokenKind token_kind;
-  PreprocessingToken preprocessing_token;
-}TokenVarient;
 
 #include "lexer.h"
 
-EXLEXDEF Lexer *lexer_token_set_string_literal(Lexer *lexer);
-EXLEXDEF Lexer *lexer_token_set_keywords(Lexer *lexer);
-EXLEXDEF Lexer *lexer_token_set_punctuator(Lexer *lexer);
+EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len);
+EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len);
 
 #endif // EXLEX_H_
 
 #ifdef EXLEX_IMPLEMENTATION
 
-/* The function lexer_token_set_string_literal() sets the qoute to the */
-/* internal lexer token. */
-/* @param lexer The Lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-EXLEXDEF Lexer *lexer_token_set_string_literal(Lexer *lexer) {
+EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len) {
 
-  lexer->token_varient.token_kind.string_literal.quote = '"';
-  return lexer;
+  switch (len) {
+  case 2: {
+    if (strncmp("do", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_DO;
+    else if (strncmp("if", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_IF;
+  } break;
+
+  case 3: {
+    if (strncmp("for", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_FOR;
+    else if (strncmp("int", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_INT;
+  } break;
+
+  case 4: {
+    if (strncmp("char", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_CHAR;
+    else if (strncmp("void", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_VOID;
+    else if (strncmp("else", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_ELSE;
+    else if (strncmp("long", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_LONG;
+    else if (strncmp("goto", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_GOTO;
+    else if (strncmp("case", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_CASE;
+    else if (strncmp("enum", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_ENUM;
+    else if (strncmp("auto", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_AUTO;
+  } break;
+
+  case 5: {
+    if (strncmp("while", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_WHILE;
+    else if (strncmp("float", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_FLOAT;
+    else if (strncmp("const", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_CONST;
+    else if (strncmp("break", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_BREAK;
+    else if (strncmp("short", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_SHORT;
+    else if (strncmp("union", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_UNION;
+  } break;
+
+  case 6: {
+    if (strncmp("return", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_RETURN;
+    else if (strncmp("struct", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_STRUCT;
+    else if (strncmp("switch", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_SWITCH;
+    else if (strncmp("double", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_DOUBLE;
+    else if (strncmp("sizeof", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_SIZEOF;
+    else if (strncmp("static", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_STATIC;
+    else if (strncmp("signed", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_SIGNED;
+    else if (strncmp("extern", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_EXTERN;
+  } break;
+
+  case 7: {
+    if (strncmp("default", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_DEFAULT;
+    else if (strncmp("typedef", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_TYPEDEF;
+  } break;
+
+  case 8: {
+    if (strncmp("continue", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_CONTINUE;
+    else if (strncmp("register", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_REGISTER;
+    else if (strncmp("unsigned", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_UNSIGNED;
+    else if (strncmp("volatile", &l->content[l->position - len], len) == 0)
+      t->kind = KEYWORD_VOLATILE;
+  } break;
+
+  default:
+    assert(0 && "KEYWORD UNREACHABLE");
+  }
 }
 
-/* The function ptr lexer_token_set_keywords() is the function that sets the */
-/* internal lexer tokens of type KEYWORD. */
-/* @param lexer The lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-EXLEXDEF Lexer *lexer_token_set_keywords(Lexer *lexer) {
-  lexer->token_varient.token_kind.keyword.auto_t = "auto";
-  lexer->token_varient.token_kind.keyword.break_t = "break";
-  lexer->token_varient.token_kind.keyword.case_t = "case";
-  lexer->token_varient.token_kind.keyword.char_t = "char";
-  lexer->token_varient.token_kind.keyword.const_t = "const";
-  lexer->token_varient.token_kind.keyword.continue_t = "continue";
-  lexer->token_varient.token_kind.keyword.default_t = "default";
-  lexer->token_varient.token_kind.keyword.do_t = "do";
-  lexer->token_varient.token_kind.keyword.double_t = "double";
-  lexer->token_varient.token_kind.keyword.else_t = "else";
-  lexer->token_varient.token_kind.keyword.enum_t = "enum";
-  lexer->token_varient.token_kind.keyword.extern_t = "extern";
-  lexer->token_varient.token_kind.keyword.float_t = "float";
-  lexer->token_varient.token_kind.keyword.for_t = "for";
-  lexer->token_varient.token_kind.keyword.goto_t = "goto";
-  lexer->token_varient.token_kind.keyword.if_t = "if";
-  lexer->token_varient.token_kind.keyword.int_t = "int";
-  lexer->token_varient.token_kind.keyword.long_t = "long";
-  lexer->token_varient.token_kind.keyword.register_t = "register";
-  lexer->token_varient.token_kind.keyword.return_t = "return";
-  lexer->token_varient.token_kind.keyword.short_t = "short";
-  lexer->token_varient.token_kind.keyword.signed_t = "signed";
-  lexer->token_varient.token_kind.keyword.sizeof_t = "sizeof";
-  lexer->token_varient.token_kind.keyword.static_t = "static";
-  lexer->token_varient.token_kind.keyword.struct_t = "struct";
-  lexer->token_varient.token_kind.keyword.switch_t = "switch";
-  lexer->token_varient.token_kind.keyword.typedef_t = "typedef";
-  lexer->token_varient.token_kind.keyword.union_t = "union";
-  lexer->token_varient.token_kind.keyword.unsigned_t = "unsigned";
-  lexer->token_varient.token_kind.keyword.void_t = "void";
-  lexer->token_varient.token_kind.keyword.volatile_t = "volatile";
-  lexer->token_varient.token_kind.keyword.while_t = "while";
+EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len) {
 
-  return lexer;
-}
+  switch (len) {
+  case 1: {
+    switch (l->content[l->position]) {
+      // TODO: Think about singe quote
+    case '^':
+      t->kind = PUNCT_BXOR;
+      break;
+    case '|':
+      t->kind = PUNCT_BOR;
+      break;
+    case '?':
+      t->kind = PUNCT_ASK;
+      break;
+    case ':':
+      t->kind = PUNCT_COLON;
+      break;
+    case ';':
+      t->kind = PUNCT_SEMICOLON;
+      break;
+    case '[':
+      t->kind = PUNCT_LBRACKET;
+      break;
+    case ']':
+      t->kind = PUNCT_RBRACKET;
+      break;
+    case '(':
+      t->kind = PUNCT_LPAREN;
+      break;
+    case ')':
+      t->kind = PUNCT_RPAREN;
+      break;
+    case '{':
+      t->kind = PUNCT_LBRACE;
+      break;
+    case '}':
+      t->kind = PUNCT_RBRACE;
+      break;
+    case '.':
+      t->kind = PUNCT_POINT;
+      break;
+    case '&':
+      t->kind = PUNCT_BAND;
+      break;
+    case '*':
+      t->kind = PUNCT_MUL;
+      break;
+    case '+':
+      t->kind = PUNCT_ADD;
+      break;
+    case '-':
+      t->kind = PUNCT_SUB;
+      break;
+    case '~':
+      t->kind = PUNCT_BNOT;
+      break;
+    case '!':
+      t->kind = PUNCT_NOT;
+      break;
+    case '/':
+      t->kind = PUNCT_DIV;
+      break;
+    case '%':
+      t->kind = PUNCT_MOD;
+      break;
+    case '<':
+      t->kind = PUNCT_LANGE;
+      break;
+    case '>':
+      t->kind = PUNCT_RANGE;
+      break;
+    case ',':
+      t->kind = PUNCT_COMMA;
+      break;
+    case '#':
+      t->kind = PUNCT_HTAG;
+      break;
+    default:
+      assert(0 && "PUNCTUATOR ONE CHAR UNREACHABLE");
+    }
+  } break;
+  case 2: {
+    if (strncmp("->", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_PDEREF;
+    else if (strncmp("++", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_INCREMENT;
+    else if (strncmp("--", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_DECREMENT;
+    else if (strncmp("<<", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_LEFTSHIFT;
+    else if (strncmp(">>", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_RIGHTSHIFT;
+    else if (strncmp("<=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_LOREQ;
+    else if (strncmp(">=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_GOREQ;
+    else if (strncmp("==", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_EQUAL;
+    else if (strncmp("!=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_NOTEQ;
+    else if (strncmp("&&", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_LAND;
+    else if (strncmp("||", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_LOR;
+    else if (strncmp("=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_ASSIGN;
+    else if (strncmp("*=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_MULEQ;
+    else if (strncmp("/=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_DIVEQ;
+    else if (strncmp("%=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_MODEQ;
+    else if (strncmp("+=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_ADDEQ;
+    else if (strncmp("-=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_SUBEQ;
+    else if (strncmp("&=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_BANDEQ;
+    else if (strncmp("^=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_BXOREQ;
+    else if (strncmp("|=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_BOREQ;
+    else if (strncmp("##", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_HHTAG;
+    else
+      assert(0 && "PUNCTUATOR TOW CHAR UNREACHABLE");
+  } break;
+  case 3: {
+    if (strncmp("...", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_VARIADIC;
+    else if (strncmp("<<=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_LEFTSHIFTEQ;
+    else if (strncmp(">>=", &l->content[l->position + len - 1], len) == 0)
+      t->kind = PUNCT_RIGHTSHIFTEQ;
+    else {
+      assert(0 && "PUNCTUATOR THREE CHAR UNREACHABLE");
+    }
+  } break;
+  default:
+    assert(0 && "PUNCTUATOR UNREACHABLE");
 
-/* The function ptr lexer_token_set_punctuator() is the function that sets the
- */
-/* internal lexer tokens of type PUNCTUATOR. */
-/* @param lexer The lexer that will be modified. */
-/* @return Lexer the that was passed in and was modified. */
-EXLEXDEF Lexer *lexer_token_set_punctuator(Lexer *lexer) {
-  lexer->token_varient.token_kind.punctuator.lbracket_t = "[";
-  lexer->token_varient.token_kind.punctuator.rbracket_t = "]";
-  lexer->token_varient.token_kind.punctuator.lparen_t = "(";
-  lexer->token_varient.token_kind.punctuator.rparen_t = ")";
-  lexer->token_varient.token_kind.punctuator.lbrace_t = "{";
-  lexer->token_varient.token_kind.punctuator.rbrace_t = "}";
-  lexer->token_varient.token_kind.punctuator.point_t = ".";
-  lexer->token_varient.token_kind.punctuator.pderef_t = "->";
-  lexer->token_varient.token_kind.punctuator.increment_t = "++";
-  lexer->token_varient.token_kind.punctuator.decrement_t = "--";
-  lexer->token_varient.token_kind.punctuator.band_t = "&";
-  lexer->token_varient.token_kind.punctuator.mul_t = "*";
-  lexer->token_varient.token_kind.punctuator.add_t = "+";
-  lexer->token_varient.token_kind.punctuator.sub_t = "-";
-  lexer->token_varient.token_kind.punctuator.bnot_t = "~";
-  lexer->token_varient.token_kind.punctuator.not_t = "|";
-  lexer->token_varient.token_kind.punctuator.div_t = "/";
-  lexer->token_varient.token_kind.punctuator.mod_t = "%";
-  lexer->token_varient.token_kind.punctuator.leftshift_t = "<<";
-  lexer->token_varient.token_kind.punctuator.rightshift_t = ">>";
-  lexer->token_varient.token_kind.punctuator.lange_t = "<";
-  lexer->token_varient.token_kind.punctuator.range_t = ">";
-  lexer->token_varient.token_kind.punctuator.loreq_t = "<=";
-  lexer->token_varient.token_kind.punctuator.goreq_t = ">=";
-  lexer->token_varient.token_kind.punctuator.equal_t = "==";
-  lexer->token_varient.token_kind.punctuator.noteq_t = "!=";
-  lexer->token_varient.token_kind.punctuator.bxor_t = "^";
-  lexer->token_varient.token_kind.punctuator.bor_t = "|";
-  lexer->token_varient.token_kind.punctuator.land_t = "&&";
-  lexer->token_varient.token_kind.punctuator.lor_t = "||";
-  lexer->token_varient.token_kind.punctuator.ask_t = "?";
-  lexer->token_varient.token_kind.punctuator.colon_t = ":";
-  lexer->token_varient.token_kind.punctuator.semicolon_t = ";";
-  lexer->token_varient.token_kind.punctuator.variadic_t = "...";
-  lexer->token_varient.token_kind.punctuator.assign_t = "=";
-  lexer->token_varient.token_kind.punctuator.muleq_t = "*=";
-  lexer->token_varient.token_kind.punctuator.diveq_t = "/=";
-  lexer->token_varient.token_kind.punctuator.modeq_t = "%=";
-  lexer->token_varient.token_kind.punctuator.addeq_t = "+=";
-  lexer->token_varient.token_kind.punctuator.subeq_t = "-=";
-  lexer->token_varient.token_kind.punctuator.leftshifteq_t = "<<=";
-  lexer->token_varient.token_kind.punctuator.rightshifteq_t = ">>=";
-  lexer->token_varient.token_kind.punctuator.bandeq_t = "&=";
-  lexer->token_varient.token_kind.punctuator.bxoreq_t = "^=";
-  lexer->token_varient.token_kind.punctuator.boreq_t = "|=";
-  lexer->token_varient.token_kind.punctuator.comma_t = ",";
-  lexer->token_varient.token_kind.punctuator.htag_t = "#";
-  lexer->token_varient.token_kind.punctuator.hhtag_t = "##";
-
-  return lexer;
+    break;
+  }
 }
 
 #endif // EXLEX_IMPLEMENTATION

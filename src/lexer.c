@@ -5,10 +5,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define EXLEX_IMPLEMENTATION
-// #include "exlex.h"
-
 #include "lexer.h"
+#ifdef EXLEX_IMPLEMENTATION
+#include "exlex.h"
+#endif
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
@@ -29,14 +29,6 @@ Lexer *lexer_new(char *content, size_t size, size_t position) {
   lexer->content = content;
   lexer->position = position;
 
-#ifdef EXLEX_IMPLEMENTATION
-
-  lexer_token_set_string_literal(lexer);
-  lexer_token_set_keywords(lexer);
-  lexer_token_set_punctuator(lexer);
-
-#endif // EXLEX_IMPLEMENTATION
-
   return lexer;
 }
 
@@ -49,7 +41,7 @@ void lexer_del(Lexer *lexer) { free(lexer); }
 /* @param lexer The given Lexer that contains the current state. */
 /* @param count The amount of chars that will be choped from the left of the */
 /* content. */
-/* @return Lexer the that was passed in and was modified. */
+/* @return Token the Error token or the Invalid token. */
 Token lexer_chop_char(Lexer *lexer, size_t count) {
   for (size_t i = 0; i < count; i++) {
     if (!lexer_check_boundery(lexer)) {
@@ -57,6 +49,7 @@ Token lexer_chop_char(Lexer *lexer, size_t count) {
     }
     lexer->position = lexer->position + 1;
   }
+
   return lexer_invalid_token(lexer);
 }
 
@@ -473,7 +466,8 @@ int lexer_check_is_str(Lexer *lexer, Token *token) {
 /* @return boolean True, if the given character is an escape char, otherwise */
 /* false. */
 int is_escape_seq(char c) {
-  if (c == '\n' || c == '\r' || c == '\t' || c == '\f' || c == '\\') {
+  if (c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f' ||
+      c == '\\') {
     return 1;
   }
   return 0;
@@ -511,15 +505,11 @@ Token lexer_next(Lexer *lexer) {
   token.kind = INVALID;
 
   lexer_trim_left(lexer);
-  if (is_escape_seq(lexer->content[lexer->position])) {
-    return lexer_invalid_token(lexer);
+  if (lexer->position > lexer->content_lenght) {
+    return lexer_eof_token(lexer);
   }
 
   token.content = &lexer->content[lexer->position];
-  if (lexer->position > lexer->content_lenght) {
-    return lexer_invalid_token(lexer);
-  }
-
   // Check for preprocessing
   if (lexer_char_is(lexer, '#') && lexer_check_boundery(lexer)) {
     token.kind = PREPROCESSING;
@@ -591,7 +581,12 @@ Token lexer_next(Lexer *lexer) {
 
     if (lexer_is_keyword(lexer, token.size)) {
 
+#ifdef EXLEX_IMPLEMENTATION
+      lexer_keyword_set_token(lexer, &token, token.size);
+#else
       token.kind = KEYWORD;
+#endif /* EXLEX_IMPLEMENTATION */
+
       return token;
     } else {
       lexer->position = startpos;
@@ -615,25 +610,39 @@ Token lexer_next(Lexer *lexer) {
   if (lexer_check_boundery(lexer)) {
     token.size = lexer->position;
     if (lexer_is_punctuator(lexer, 1, 0)) {
-      token.kind = PUNCTUATOR;
-
       if (!lexer_check_punctuator_lookahead(lexer)) {
         token.size = 1;
         return token;
       }
-
       token.size = lexer->position - token.size;
+
+#ifdef EXLEX_IMPLEMENTATION
+      lexer_punctuator_set_token(lexer, &token, token.size);
+#else
+      token.kind = PUNCTUATOR;
+#endif /* EXLEX_IMPLEMENTATION */
       return token;
     }
   }
 
   token.kind = INVALID;
   if (!lexer_check_boundery(lexer)) {
-    return lexer_invalid_token(lexer);
+    return lexer_eof_token(lexer);
   } else {
     lexer_chop_char(lexer, 1);
   }
   token.size = 1;
+  return token;
+}
+
+/* The  function creates the EOF_TOKEN */
+/* @param lexer The Lexer that will be modified. */
+/* @return token The token that will be modified and contains the EOF_TOKEN */
+Token lexer_eof_token(Lexer *lexer) {
+  Token token;
+  token.kind = EOF_TOKEN;
+  token.size = lexer->content_lenght;
+  token.content = &lexer->content[lexer->content_lenght];
   return token;
 }
 
@@ -667,15 +676,24 @@ void lexer_trace_token(Lexer *lexer, Token *token) {
 /* @return Token The ERROR token.  */
 Token lexer_error(Lexer *lexer) {
 
+  Token t;
   int checkend = 0;
   char *pstring, *pstring_tail = 0, *final_token;
   size_t current_lexer_posion = lexer->position;
   const char c = lexer->content[lexer->position];
+
+  /* ----------------------------------------------------------------------- */
+  /* ------------------------------ EOF TOKEN ------------------------------ */
+  /* ----------------------------------------------------------------------- */
+
+  if (!lexer_check_boundery(lexer)) {
+    return lexer_eof_token(lexer);
+  }
+
   /* ----------------------------------------------------------------------- */
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
   /* ----------------------------------------------------------------------- */
 
-  Token t;
   lexer_trace_token(lexer, &t);
 
   /* Allocate memory for the prefix string of the token. */
