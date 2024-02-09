@@ -29,8 +29,6 @@ static const char *KEYWORDS[] = {
     "static",   "struct",   "switch", "typedef", "union",  "unsigned",
     "void",     "volatile", "while",  NULL};
 
-// TODO: Add an end of stream token and set the actual punctuator tokens.
-
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
   INVALID = 0,
@@ -45,7 +43,7 @@ typedef enum Kind {
   COMMENT = 9,
   EOF_TOKEN = 10,
 
-#ifdef EXLEX_H_
+#ifdef EXLEX_IMPLEMENTATION
 
   PUNCT_SINGLEQUOTE = 39, // "'"
 
@@ -141,8 +139,9 @@ typedef enum Kind {
   KEYWORD_VOID = 309,
   KEYWORD_VOLATILE = 310,
   KEYWORD_WHILE = 311,
+  KEYWORD_SIZE_T = 312,
 
-#endif // EXLEX_H_
+#endif // EXLEX_IMPLEMENTATION
 
 } Kind;
 
@@ -182,5 +181,12 @@ int is_sybol_alnum_and_(char c);
 int is_sybol_alpha_and_(char c);
 
 /* ========================================================================== */
+
+#ifndef EXLEXDEF
+#define EXLEXDEF static inline
+#endif // EXLEXDEF
+
+EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len);
+EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len);
 
 #endif // LEXER_H_
