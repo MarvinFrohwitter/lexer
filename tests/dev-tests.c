@@ -1,9 +1,9 @@
 #define GUTILS_IMPLEMENTATION
 #include "../../gutils/gutils.h"
+
+#define EXLEX_IMPLEMENTATION
 #include "../src/lexer.h"
-#include <assert.h>
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 typedef struct FileSring {
@@ -14,7 +14,7 @@ typedef struct FileSring {
 
 int main(void) {
 
-  char *content_to_parse = "int "
+  char *content_to_parse = "G "
                            // "4567L "
                            // "4567ULL "
                            // "47 "
@@ -26,18 +26,19 @@ int main(void) {
 
                            // "1234ULLH "
                            // "long "
-                           "long 'a'"
+                           "= .,"
+                           "long int = 'ah' "
                            // "void \n "
 
                            // "\" Das ist ein string\"hallo "
 
                            // "0xB "
                            // "0xB4 "
-                           "0XCCBBA "
+                           // "0XCCBBA "
                            // "0xCCBBAA88 "
                            // "0xB4812ABDBDF "
                            // // Debug fail tests:
-                           "1e+4"
+                           // "1e+4"
                            // "3e-6 "
                            // "3e+662337 "
                            // "3e-637 "
@@ -69,9 +70,9 @@ int main(void) {
                            // "// \"Haus Hans\"   lasst\" IM string \"\n"
                            // "// \"Haus Hans\"   lasst\n"
                            // "// \"Haus Hans\"   Hase \n  \n"
-                           "// \"Haus Hans\"   lasst\n"
+                           // "// \"Haus Hans\"   lasst\n"
                            "size_t \n"
-                           "0xA\n";
+                           "0xA     ";
 
   size_t len = strlen(content_to_parse);
 
@@ -92,13 +93,14 @@ int main(void) {
   }
   fclose(fd);
 
-  // Lexer lexer = lexer_new(fs.items, fs.count, 0);
-  Lexer lexer = lexer_new(content_to_parse, len, 0);
+  Lexer *lexer = lexer_new(fs.items, fs.count, 0);
+  // Lexer *lexer = lexer_new(content_to_parse, len, 0);
 
   FileString output = {0};
 
-  while (lexer.content_lenght - 1 >= lexer.position) {
-   Token t = lexer_next(&lexer);
+  Token t = {0};
+  while (t.kind != EOF_TOKEN && lexer->content_lenght >= lexer->position) {
+    t = lexer_next(lexer);
 
     da_append_many(&output, t.content, t.size);
     da_append(&output, '\0');
@@ -108,6 +110,8 @@ int main(void) {
     output.count = 0;
   }
   printf("Succses\n");
+
+  lexer_del(lexer);
 
   return 0;
 }

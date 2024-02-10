@@ -4,7 +4,7 @@ SRC = dev-tests.c
 
 CC = cc
 LIBS = ../src/lexer.c
-CFLAGS = -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
+CFLAGS = -O0 -pedantic -Wall -Wextra -std=c11 -ggdb
 
 all: options lexer
 
@@ -15,12 +15,14 @@ options:
 	@echo "CC     = ${CC}"
 
 lexer:
-	${CC} -o $@ ${SRC} ${CFLAGS} ${LIBS}
+	${CC} -o lexer-intermediate ${SRC} ${CFLAGS} ${LIBS}
+	${CC} -o $@ ${SRC} ${CFLAGS} -DEXLEX_IMPLEMENTATION ${LIBS}
 
 clean:
-	rm -f lexer
+	rm -f lexer lexer-intermediate
 
 test: lexer
+	./lexer-intermediate
 	./lexer
 
 

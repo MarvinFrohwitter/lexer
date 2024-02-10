@@ -16,7 +16,7 @@ START_TEST(test_lexer_new) {
   base_lexer.content_lenght = len;
   base_lexer.position = pos;
 
-  Lexer new_lexer = lexer_new(content_to_parse, len, pos);
+  Lexer new_lexer = *lexer_new(content_to_parse, len, pos);
 
   ck_assert(base_lexer.content == new_lexer.content);
   ck_assert(base_lexer.content_lenght == new_lexer.content_lenght);
