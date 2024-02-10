@@ -1,3 +1,4 @@
+
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -5,7 +6,10 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define EXLEX_IMPLEMENTATION
+// TODO: Handle Single quote as char string because errors like token \ in the
+// '\0' cant be parsed correctly
+
+#define EXLEX_IMPLEMENTATION
 #include "lexer.h"
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
@@ -271,8 +275,7 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       goto compute_return;
     }
 
-    // if (!lexer_char_is(lexer, ' ') &&
-    // !is_escape_seq(lexer->content[lexer->position]) &&
+    // if (!lexer_char_is(lexer, ' ') && !is_escape_seq(lexer->content[lexer->position]) &&
     //     !lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2)) {
     //   goto errortoken;
     // }
@@ -556,7 +559,7 @@ Token lexer_next(Lexer *lexer) {
 
     if (!lexer_check_is_number(lexer, &token)) {
       fprintf(stderr,
-              "ERROR: The lexer can not computet the token as part of a "
+              "ERROR: The lexer can not computed the token as part of a "
               "number!\n");
       fprintf(stderr,
               "--------------------------------------------------------\n");
@@ -987,55 +990,55 @@ EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len) {
     }
   } break;
   case 2: {
-    if (strncmp("->", &l->content[l->position + len - 1], len) == 0)
+    if (strncmp("->", &l->content[l->position], len) == 0)
       t->kind = PUNCT_PDEREF;
-    else if (strncmp("++", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("++", &l->content[l->position], len) == 0)
       t->kind = PUNCT_INCREMENT;
-    else if (strncmp("--", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("--", &l->content[l->position], len) == 0)
       t->kind = PUNCT_DECREMENT;
-    else if (strncmp("<<", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("<<", &l->content[l->position], len) == 0)
       t->kind = PUNCT_LEFTSHIFT;
-    else if (strncmp(">>", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp(">>", &l->content[l->position], len) == 0)
       t->kind = PUNCT_RIGHTSHIFT;
-    else if (strncmp("<=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("<=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_LOREQ;
-    else if (strncmp(">=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp(">=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_GOREQ;
-    else if (strncmp("==", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("==", &l->content[l->position], len) == 0)
       t->kind = PUNCT_EQUAL;
-    else if (strncmp("!=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("!=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_NOTEQ;
-    else if (strncmp("&&", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("&&", &l->content[l->position], len) == 0)
       t->kind = PUNCT_LAND;
-    else if (strncmp("||", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("||", &l->content[l->position], len) == 0)
       t->kind = PUNCT_LOR;
-    else if (strncmp("*=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("*=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_MULEQ;
-    else if (strncmp("/=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("/=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_DIVEQ;
-    else if (strncmp("%=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("%=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_MODEQ;
-    else if (strncmp("+=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("+=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_ADDEQ;
-    else if (strncmp("-=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("-=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_SUBEQ;
-    else if (strncmp("&=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("&=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_BANDEQ;
-    else if (strncmp("^=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("^=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_BXOREQ;
-    else if (strncmp("|=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("|=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_BOREQ;
-    else if (strncmp("##", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("##", &l->content[l->position], len) == 0)
       t->kind = PUNCT_HHTAG;
     else
       assert(0 && "PUNCTUATOR TOW CHAR UNREACHABLE");
   } break;
   case 3: {
-    if (strncmp("...", &l->content[l->position + len - 1], len) == 0)
+    if (strncmp("...", &l->content[l->position], len) == 0)
       t->kind = PUNCT_VARIADIC;
-    else if (strncmp("<<=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp("<<=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_LEFTSHIFTEQ;
-    else if (strncmp(">>=", &l->content[l->position + len - 1], len) == 0)
+    else if (strncmp(">>=", &l->content[l->position], len) == 0)
       t->kind = PUNCT_RIGHTSHIFTEQ;
     else {
       assert(0 && "PUNCTUATOR THREE CHAR UNREACHABLE");

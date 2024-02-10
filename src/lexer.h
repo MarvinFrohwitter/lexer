@@ -12,12 +12,15 @@ typedef struct Lexer {
 
 /* The variable that defines the escape characters. */
 static const char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
+
 /* The variable PUNCTUATORS is a pointer to the array of single tokens of type
  */
 /* PUNCTUATOR. It contains the tokens to match on. */
-static const char *PUNCTUATORS[] = {",", "]", ")", "=", ";", "{", "}", "&", "*",
-                                    "+", "-", "~", "|", "/", "%", "<", ">", "^",
-                                    "|", "?", ":", "(", "[", ".", NULL};
+static const char *PUNCTUATORS[] = {
+    // NOTE: It is important that the '.' is at the end of the array! It is
+    // checked by the number function for floating point calculations.
+    ",", "]", ")", "=", ";", "{", "}", "&", "*", "+", "-", "~", "|", "/",
+    "%", "<", ">", "^", "|", "?", ":", "(", "[", "!", "'", ".", NULL};
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
