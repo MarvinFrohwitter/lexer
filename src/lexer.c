@@ -267,6 +267,7 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   token->kind = NUMBER;
   size_t pos = lexer->position;
 
+  // TODO: Support binary like '0b101'
   if (lexer_char_is(lexer, '0') && lexer_check_boundery_next(lexer) &&
       (lexer_next_char_is(lexer, 'x') || lexer_next_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 2);
@@ -334,6 +335,11 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
                     (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E'))) &&
                    is_floating <= 1) {
           continue;
+        } else if ((isdigit(lexer->content[lexer->position]) ||
+                    (lexer_char_is(lexer, 'f') || lexer_char_is(lexer, 'F') ||
+                     lexer_char_is(lexer, 'l') || lexer_char_is(lexer, 'L'))) &&
+                   is_floating <= 1) {
+          continue;
         }
         { goto errortoken; }
       }
@@ -383,7 +389,7 @@ postfixcheck: {
       goto compute_return;
     } break;
     case ' ':
-    case '/':
+    // case '/':
       goto compute_return;
       break;
     default:
@@ -420,14 +426,13 @@ postfixcheck: {
       i = maxiter;
       break;
     }
-    case '/':
-      if (lexer_check_boundery_next(lexer) && lexer_next_char_is(lexer, '/')) {
-        i = maxiter;
-      } else {
-        goto errortoken;
-      }
-
-      break;
+    // case '/':
+    //   if (lexer_check_boundery_next(lexer) && lexer_next_char_is(lexer, '/')) {
+    //     i = maxiter;
+    //   } else {
+    //     goto errortoken;
+    //   }
+    //   break;
 
     default:
       if (lexer_check_boundery(lexer) &&

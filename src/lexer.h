@@ -24,6 +24,7 @@ static const char *PUNCTUATORS[] = {
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
+// TODO: SUPPORT all posix stdint varients like uint32_t
 static const char *KEYWORDS[] = {
     "auto",     "break",    "size_t", "case",    "char",   "const",
     "continue", "default",  "do",     "double",  "else",   "enum",
