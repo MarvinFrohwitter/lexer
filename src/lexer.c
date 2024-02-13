@@ -246,8 +246,8 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
  * that can also contain the error token that is passed back up in the call
  * stack. */
 /* @return int The error code of the corresponding action result. It returns one
- * if the function computes a number in the token or 0 if the token is the error
- * token. */
+ * if the function computes a number in the token or 0 if the token could
+ * potentially be a punctuator. -1 if the token is the error token. */
 int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_escape = 0;
   int is_floating = 0;
