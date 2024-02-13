@@ -1,9 +1,3 @@
-// TODO: The floating point value has to be fished no space has to cum next
-// example as follows "123.3.f," the comma is the problem
-
-// TODO: Single punctuators has to break after the char so that something like
-// "a*(b*c+2)*PI" is doable.
-
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
@@ -81,6 +75,18 @@ Token lexer_invalid_token(Lexer *lexer) {
 /* otherwise false. */
 int lexer_check_boundery(Lexer *lexer) {
   if (lexer->position < lexer->content_lenght) {
+    return 1;
+  }
+  return 0;
+}
+
+/* The function check_boundery_next() checks for the length of the lexer
+ * content, if the current lexer position+1 is in the content length. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @return boolean True, if the lexer position+1 is in the content length, */
+/* otherwise false. */
+int lexer_check_boundery_next(Lexer *lexer) {
+  if (lexer->position + 1 < lexer->content_lenght) {
     return 1;
   }
   return 0;
@@ -179,8 +185,17 @@ int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
 /* @param lexer The given Lexer that contains the current state. */
 /* @return boolean True, if the next character is also part of the punctuator,
  */
-/* otherwise false. */
+/* otherwise false. On error -1.*/
 int lexer_check_punctuator_lookahead(Lexer *lexer) {
+
+  if (!lexer_check_boundery_next(lexer)) {
+    return -1;
+  }
+  lexer_chop_char(lexer, 1);
+  if (!lexer_check_boundery_next(lexer)) {
+    return -1;
+  }
+  lexer->position -= 1;
 
   if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') &&
       lexer->content[lexer->position + 2] == '=') {
@@ -255,9 +270,8 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   token->kind = NUMBER;
   size_t pos = lexer->position;
 
-  // TODO: Handel capital E for numbers.
   // TODO: Handel one by one because no boundary check before
-  if (lexer_char_is(lexer, '0') &&
+  if (lexer_char_is(lexer, '0') && lexer_check_boundery_next(lexer) &&
       (lexer_next_char_is(lexer, 'x') || lexer_next_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 2);
 
@@ -282,12 +296,6 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       goto compute_return;
     }
 
-    // if (!lexer_char_is(lexer, ' ') &&
-    // !is_escape_seq(lexer->content[lexer->position]) &&
-    //     !lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2)) {
-    //   goto errortoken;
-    // }
-
   } else {
     while (lexer_check_boundery(lexer) &&
            (isdigit(lexer->content[lexer->position]) ||
@@ -311,7 +319,7 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       char c = lexer->content[lexer->position];
       if (lexer->content[lexer->position - 1] == '.' &&
           (isalpha(c) || isspace(c) || lexer_is_punctuator(lexer, 1, 0)) &&
-          !lexer_char_is(lexer, 'e')) {
+          (!lexer_char_is(lexer, 'e') || !lexer_char_is(lexer, 'E'))) {
         goto punctuator;
       }
 
@@ -327,16 +335,11 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
             lexer_char_is(lexer, '.')) {
           goto punctuator;
         } else if ((isdigit(lexer->content[lexer->position]) ||
-                    lexer_char_is(lexer, 'e')) &&
+                    (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E'))) &&
                    is_floating <= 1) {
           continue;
         }
         { goto errortoken; }
-
-        // if (!isdigit(lexer->content[lexer->position]) &&
-        //     !lexer_char_is(lexer, 'e')) {
-        //   goto punctuator;
-        // }
       }
     }
 
@@ -344,13 +347,7 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       goto compute_return;
     }
 
-    // if (lexer_char_is(lexer, 'e') &&
-    //     ((lexer_next_char_is(lexer, '-') || lexer_next_char_is(lexer, '+'))
-    //     ||
-    //      isdigit(lexer->content[lexer->position + 1])) &&
-    //     isdigit(lexer->content[lexer->position + 2])) {
-
-    if (lexer_char_is(lexer, 'e')) {
+    if (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E')) {
       {
         Token token = lexer_chop_char(lexer, 1);
         if (token.kind == ERROR)
@@ -422,7 +419,7 @@ postfixcheck: {
       break;
     }
     case '/':
-      if (lexer_next_char_is(lexer, '/')) {
+      if (lexer_check_boundery_next(lexer) && lexer_next_char_is(lexer, '/')) {
         i = maxiter;
       } else {
         goto errortoken;
@@ -480,7 +477,7 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
     return 0;
   }
 
-  while (!lexer_char_is(lexer, '\n') && lexer_check_boundery(lexer)) {
+  while (lexer_check_boundery(lexer) && !lexer_char_is(lexer, '\n')) {
     lexer_chop_char(lexer, 1);
   }
 
@@ -497,15 +494,17 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 
   size_t position = lexer->position;
-  lexer_chop_char(lexer, 2);
-  if (!lexer_check_boundery(lexer)) {
-    lexer->position = lexer->position - 1;
-    return 0;
+  {
+    Token token = lexer_chop_char(lexer, 2);
+    if (token.kind == ERROR) {
+      return 0;
+    }
   }
 
   while (lexer_check_boundery(lexer)) {
     if (is_multi) {
-      if (lexer_char_is(lexer, '*') && lexer_next_char_is(lexer, '/')) {
+      if (lexer_char_is(lexer, '*') && lexer_check_boundery_next(lexer) &&
+          lexer_next_char_is(lexer, '/')) {
         lexer_chop_char(lexer, 2);
         break;
       }
@@ -527,29 +526,33 @@ int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 /* @return boolean 1, if the function check is passed, otherwise 0. */
 int lexer_check_is_str(Lexer *lexer, Token *token) {
 
-  if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
-    if (!lexer_next_char_is(lexer, '"') && !lexer_check_boundery(lexer)) {
-      return 0;
-    }
+  if (!lexer_check_boundery_next(lexer)) {
+    return 0;
+  }
 
-    token->kind = STRINGLITERAL;
-    size_t position = lexer->position;
-    lexer_chop_char(lexer, 1);
-    while (lexer_check_boundery(lexer)) {
-      if (lexer_char_is(lexer, '"')) {
-        lexer_chop_char(lexer, 1);
-        break;
-      } else if (is_escape_seq(lexer->content[lexer->position])) {
-        lexer_chop_char(lexer, 1);
-        if (!lexer_check_boundery(lexer)) {
+  token->kind = STRINGLITERAL;
+  size_t position = lexer->position;
+  lexer_chop_char(lexer, 1);
+  while (lexer_check_boundery(lexer)) {
+    if (lexer_char_is(lexer, '"')) {
+      lexer_chop_char(lexer, 1);
+      break;
+    } else if (is_escape_seq(lexer->content[lexer->position])) {
+      // lexer_chop_char(lexer, 1);
+      // if (!lexer_check_boundery(lexer)) {
+      //     return 0;
+      // }
+      {
+        Token token = lexer_chop_char(lexer, 1);
+        if (token.kind == ERROR) {
           return 0;
         }
-      } else {
-        lexer_chop_char(lexer, 1);
       }
+    } else {
+      lexer_chop_char(lexer, 1);
     }
-    token->size = lexer->position - position;
   }
+  token->size = lexer->position - position;
   return 1;
 }
 
@@ -610,7 +613,7 @@ Token lexer_next(Lexer *lexer) {
 
   token.content = &lexer->content[lexer->position];
   // Check for preprocessing
-  if (lexer_char_is(lexer, '#') && lexer_check_boundery(lexer)) {
+  if (lexer_char_is(lexer, '#')) {
     token.kind = PREPROCESSING;
 
     if (!lexer_check_is_preproc(lexer, &token)) {
@@ -620,8 +623,8 @@ Token lexer_next(Lexer *lexer) {
   }
 
   // Check for Comments
-  if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '/') &&
-      lexer_check_boundery(lexer)) {
+  if (lexer_char_is(lexer, '/') && lexer_check_boundery_next(lexer) &&
+      lexer_next_char_is(lexer, '/')) {
 
     if (!lexer_check_is_comment(lexer, &token, 0)) {
       return lexer_error(lexer);
@@ -632,7 +635,7 @@ Token lexer_next(Lexer *lexer) {
 
   // Check for multi line Comments
   if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '*') &&
-      lexer_check_boundery(lexer)) {
+      lexer_check_boundery_next(lexer)) {
 
     if (!lexer_check_is_comment(lexer, &token, 1)) {
       return lexer_error(lexer);
@@ -645,7 +648,7 @@ Token lexer_next(Lexer *lexer) {
   //       (design question)
 
   // Check for string literals
-  if (lexer_char_is(lexer, '"') && lexer_check_boundery(lexer)) {
+  if (lexer_char_is(lexer, '"')) {
     if (!lexer_check_is_str(lexer, &token)) {
       return lexer_error(lexer);
     };
@@ -822,7 +825,7 @@ Token lexer_error(Lexer *lexer) {
   /* Compute the second part of the token after the fail point. */
   lexer->position = current_lexer_posion;
 
-  if (lexer_check_boundery(lexer)) {
+  if (lexer_check_boundery_next(lexer)) {
     lexer->position = lexer->position + 1;
   } else {
     // NOTE: That is very unlikely to happen. Only at the end of the content.

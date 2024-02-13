@@ -177,6 +177,7 @@ int lexer_is_keyword(Lexer *lexer, size_t length);
 int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
 int lexer_check_punctuator_lookahead(Lexer *lexer);
 int lexer_check_boundery(Lexer *lexer);
+int lexer_check_boundery_next(Lexer *lexer);
 
 /* ========================================================================== */
 int is_escape_seq(char c);
