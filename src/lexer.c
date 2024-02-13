@@ -1,3 +1,8 @@
+// TODO: The floating point value has to be fished no space has to cum next
+// example as follows "123.3.f," the comma is the problem
+
+// TODO: Single punctuators has to break after the char so that something like
+// "a*(b*c+2)*PI" is doable.
 
 #include <assert.h>
 #include <ctype.h>
@@ -245,7 +250,7 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
  * token. */
 int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_escape = 0;
-  int ispostfix = 0;
+  int is_floating = 0;
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   token->kind = NUMBER;
   size_t pos = lexer->position;
@@ -275,7 +280,8 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       goto compute_return;
     }
 
-    // if (!lexer_char_is(lexer, ' ') && !is_escape_seq(lexer->content[lexer->position]) &&
+    // if (!lexer_char_is(lexer, ' ') &&
+    // !is_escape_seq(lexer->content[lexer->position]) &&
     //     !lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2)) {
     //   goto errortoken;
     // }
@@ -285,6 +291,9 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
            (isdigit(lexer->content[lexer->position]) ||
             lexer->content[lexer->position] == '.') &&
            !is_escape_seq(lexer->content[lexer->position])) {
+      if (lexer->content[lexer->position] == '.') {
+        is_floating = 1;
+      }
       lexer_chop_char(lexer, 1);
     }
 
@@ -292,11 +301,27 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       goto compute_return;
     }
 
-    if (lexer_char_is(lexer, 'e') &&
-        (lexer_next_char_is(lexer, '-') || lexer_next_char_is(lexer, '+')) &&
-        isdigit(lexer->content[lexer->position + 2])) {
+    // if (lexer_char_is(lexer, 'e') &&
+    //     ((lexer_next_char_is(lexer, '-') || lexer_next_char_is(lexer, '+'))
+    //     ||
+    //      isdigit(lexer->content[lexer->position + 1])) &&
+    //     isdigit(lexer->content[lexer->position + 2])) {
 
-      lexer_chop_char(lexer, 2);
+    if (lexer_char_is(lexer, 'e')) {
+      {
+        Token token = lexer_chop_char(lexer, 1);
+        if (token.kind == ERROR)
+          goto errortoken;
+      }
+      if (lexer_char_is(lexer, '-') || lexer_char_is(lexer, '+') ||
+          isdigit(lexer->content[lexer->position])) {
+        {
+          Token token = lexer_chop_char(lexer, 1);
+          if (token.kind == ERROR)
+            goto errortoken;
+        }
+      }
+
       while (isdigit(lexer->content[lexer->position]) &&
              lexer_check_boundery(lexer)) {
 
@@ -308,12 +333,32 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       }
       goto postfixcheck;
     }
+    // }
   }
 
 postfixcheck: {
+  size_t maxiter = 4;
+  if (is_floating) {
+    switch (lexer->content[lexer->position]) {
+    case 'L':
+    case 'l':
+    case 'F':
+    case 'f': {
+      lexer_chop_char(lexer, 1);
+      goto compute_return;
+    } break;
+    case ' ':
+    case '/':
+      goto compute_return;
+      break;
+    default:
+      goto errortoken;
+    }
+    maxiter = 0;
+  }
+
   // The 4th iteration handles the next char so, if the next char is not a
   // space the default catches the error.
-  size_t maxiter = 4;
   for (size_t i = 0; i < maxiter; i++) {
     switch (lexer->content[lexer->position]) {
     case 'L':
@@ -321,7 +366,12 @@ postfixcheck: {
     case 'U':
     case 'u': {
       lexer_chop_char(lexer, 1);
-      ispostfix = 1;
+      break;
+    }
+    case 'F':
+    case 'f': {
+      lexer_chop_char(lexer, 1);
+      i = maxiter;
       break;
     }
     case ' ': {
@@ -351,13 +401,9 @@ postfixcheck: {
     }
   }
 }
-compute_return:
 
-  if (ispostfix) {
-    token->size = lexer->position - 1 - pos;
-  } else {
-    token->size = lexer->position - pos;
-  }
+compute_return:
+  token->size = lexer->position - pos;
   return 1;
 
 errortoken: {
@@ -458,13 +504,16 @@ int lexer_check_is_str(Lexer *lexer, Token *token) {
   return 1;
 }
 
-/* ========================================================================= */
+/* =========================================================================
+ */
 
-/* The function is_escape_seq() returns, if the given char is equal to an escape
+/* The function is_escape_seq() returns, if the given char is equal to an
+ * escape
  */
 /* character. */
 /* @param c The char to compare. */
-/* @return boolean True, if the given character is an escape char, otherwise */
+/* @return boolean True, if the given character is an escape char, otherwise
+ */
 /* false. */
 int is_escape_seq(char c) {
   if (c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f' ||
@@ -694,17 +743,23 @@ Token lexer_error(Lexer *lexer) {
   size_t current_lexer_posion = lexer->position;
   const char c = lexer->content[lexer->position];
 
-  /* ----------------------------------------------------------------------- */
-  /* ------------------------------ EOF TOKEN ------------------------------ */
-  /* ----------------------------------------------------------------------- */
+  /* -----------------------------------------------------------------------
+   */
+  /* ------------------------------ EOF TOKEN ------------------------------
+   */
+  /* -----------------------------------------------------------------------
+   */
 
   if (!lexer_check_boundery(lexer)) {
     return lexer_eof_token(lexer);
   }
 
-  /* ----------------------------------------------------------------------- */
-  /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
-  /* ----------------------------------------------------------------------- */
+  /* -----------------------------------------------------------------------
+   */
+  /* ------------------ IF POSSIBLE DETECT THE TOKEN. ----------------------
+   */
+  /* -----------------------------------------------------------------------
+   */
 
   lexer_trace_token(lexer, &t);
 
@@ -795,7 +850,8 @@ handle:
   token.size = strlen(final_token);
   token.content = &lexer->content[preserve_lexer_posion];
 
-  /* Free the allocated memory for the individual parts of the token string. */
+  /* Free the allocated memory for the individual parts of the token string.
+   */
 
   free(pstring);
   free(pstring_tail);
