@@ -19,8 +19,8 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
 static const char *PUNCTUATORS[] = {
     // NOTE: It is important that the '.' is at the end of the array! It is
     // checked by the number function for floating point calculations.
-    ",", "]", ")", "=", ";", "{", "}", "&", "*", "+", "-", "~", "|", "/",
-    "%", "<", ">", "^", "|", "?", ":", "(", "[", "!", "'", ".", NULL};
+    ",",  "]", ")", "=", ";", "{", "}", "&", "*", "+", "-", "~", "|", "/",
+    "\\", "%", "<", ">", "^", "|", "?", ":", "(", "[", "!", "'", ".", NULL};
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
@@ -49,6 +49,7 @@ typedef enum Kind {
 #ifdef EXLEX_IMPLEMENTATION
 
   PUNCT_SINGLEQUOTE = 39, // "'"
+  PUNCT_BACKSLASH = '\\', // 92
 
   // ALL PUNCTUATORS
   PUNCT_NOT = '!',       // 33

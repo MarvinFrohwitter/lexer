@@ -1012,6 +1012,9 @@ EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len) {
     case PUNCT_SINGLEQUOTE:
       t->kind = PUNCT_SINGLEQUOTE;
       break;
+    case '\\':
+      t->kind = PUNCT_BACKSLASH;
+      break;
     case '^':
       t->kind = PUNCT_BXOR;
       break;
