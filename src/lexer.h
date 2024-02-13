@@ -156,6 +156,7 @@ typedef struct Token {
 } Token;
 
 /* ========================================================================== */
+// TODO: Präfix for functions static inline
 
 Lexer *lexer_new(char *content, size_t size, size_t position);
 void lexer_del(Lexer *lexer);

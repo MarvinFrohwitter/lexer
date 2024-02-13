@@ -5,9 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// TODO: Handle Single quote as char string because errors like token \ in the
-// '\0' cant be parsed correctly
-
 #define EXLEX_IMPLEMENTATION
 #include "lexer.h"
 
@@ -270,7 +267,6 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   token->kind = NUMBER;
   size_t pos = lexer->position;
 
-  // TODO: Handel one by one because no boundary check before
   if (lexer_char_is(lexer, '0') && lexer_check_boundery_next(lexer) &&
       (lexer_next_char_is(lexer, 'x') || lexer_next_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 2);
@@ -373,7 +369,6 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
       }
       goto postfixcheck;
     }
-    // }
   }
 
 postfixcheck: {
@@ -392,7 +387,14 @@ postfixcheck: {
       goto compute_return;
       break;
     default:
-      goto errortoken;
+      if (lexer_check_boundery(lexer) &&
+          (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
+           is_escape_seq(lexer->content[lexer->position]))) {
+        goto compute_return;
+        break;
+      } else {
+        goto errortoken;
+      }
     }
     maxiter = 0;
   }
@@ -643,9 +645,6 @@ Token lexer_next(Lexer *lexer) {
     token.kind = COMMENT;
     return token;
   }
-
-  // TODO: support char strings like 'A' and '\0' maybe it is a number
-  //       (design question)
 
   // Check for string literals
   if (lexer_char_is(lexer, '"')) {
@@ -908,6 +907,7 @@ handle:
 
 #ifdef EXLEX_IMPLEMENTATION
 
+// TODO: Documentation
 EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len) {
 
   switch (len) {
@@ -1003,12 +1003,12 @@ EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len) {
   }
 }
 
+// TODO: Documentation
 EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len) {
 
   switch (len) {
   case 1: {
     switch (l->content[l->position]) {
-      // TODO: Think about singe quote
     case PUNCT_SINGLEQUOTE:
       t->kind = PUNCT_SINGLEQUOTE;
       break;
