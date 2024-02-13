@@ -255,6 +255,8 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
   token->kind = NUMBER;
   size_t pos = lexer->position;
 
+  // TODO: Handel capital E for numbers.
+  // TODO: Handel one by one because no boundary check before
   if (lexer_char_is(lexer, '0') &&
       (lexer_next_char_is(lexer, 'x') || lexer_next_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 2);
@@ -291,10 +293,51 @@ int lexer_check_is_number(Lexer *lexer, Token *token) {
            (isdigit(lexer->content[lexer->position]) ||
             lexer->content[lexer->position] == '.') &&
            !is_escape_seq(lexer->content[lexer->position])) {
-      if (lexer->content[lexer->position] == '.') {
-        is_floating = 1;
+
+      if (is_floating &&
+          (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
+        goto punctuator;
       }
-      lexer_chop_char(lexer, 1);
+      if (lexer_char_is(lexer, '.')) {
+        is_floating += 1;
+      }
+
+      {
+        Token token = lexer_chop_char(lexer, 1);
+        if (token.kind == ERROR)
+          goto errortoken;
+      }
+
+      char c = lexer->content[lexer->position];
+      if (lexer->content[lexer->position - 1] == '.' &&
+          (isalpha(c) || isspace(c) || lexer_is_punctuator(lexer, 1, 0)) &&
+          !lexer_char_is(lexer, 'e')) {
+        goto punctuator;
+      }
+
+      if (lexer_char_is(lexer, '.')) {
+        is_floating += 1;
+        {
+          Token token = lexer_chop_char(lexer, 1);
+          if (token.kind == ERROR)
+            goto errortoken;
+        }
+
+        if (lexer->content[lexer->position - 2] == '.' &&
+            lexer_char_is(lexer, '.')) {
+          goto punctuator;
+        } else if ((isdigit(lexer->content[lexer->position]) ||
+                    lexer_char_is(lexer, 'e')) &&
+                   is_floating <= 1) {
+          continue;
+        }
+        { goto errortoken; }
+
+        // if (!isdigit(lexer->content[lexer->position]) &&
+        //     !lexer_char_is(lexer, 'e')) {
+        //   goto punctuator;
+        // }
+      }
     }
 
     if (!lexer_check_boundery(lexer)) {
@@ -406,13 +449,19 @@ compute_return:
   token->size = lexer->position - pos;
   return 1;
 
+punctuator: {
+  // Is probably a punctuator.
+  lexer->position = pos;
+  return 0;
+}
+
 errortoken: {
   Token t = lexer_error(lexer);
 
   token->content = t.content;
   token->size = t.size;
   token->kind = t.kind;
-  return 0;
+  return -1;
 }
 }
 
@@ -604,17 +653,11 @@ Token lexer_next(Lexer *lexer) {
   }
 
   // Check for numbers
-  if (isdigit(lexer->content[lexer->position])) {
-
-    if (!lexer_check_is_number(lexer, &token)) {
-      fprintf(stderr,
-              "ERROR: The lexer can not computed the token as part of a "
-              "number!\n");
-      fprintf(stderr,
-              "--------------------------------------------------------\n");
+  if (isdigit(lexer->content[lexer->position]) || lexer_char_is(lexer, '.')) {
+    if (lexer_check_is_number(lexer, &token)) {
+      return token;
     }
-
-    return token;
+    token.kind = INVALID;
   }
 
   // Check for keywords
