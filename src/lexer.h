@@ -5,7 +5,7 @@
 
 #ifndef BASICLEXDEF
 #define BASICLEXDEF
-#endif // LEXDEF
+#endif // BASICLEXDEF
 
 #ifndef LEXDEF
 #define LEXDEF static inline
@@ -169,10 +169,26 @@ typedef struct Token {
 } Token;
 
 /* ========================================================================== */
+/* ============================ PUBLIC FUNCTIONS ============================ */
+/* ========================================================================== */
 
 BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position);
 BASICLEXDEF void lexer_del(Lexer *lexer);
 BASICLEXDEF Token lexer_next(Lexer *lexer);
+
+/* ========================================================================== */
+/* ===== EXTENDED FUNCTIONS PRIVAT BUT PUBLIC FUNCTIONALITY ENABLED BY ===== */
+/* ===== PROVIDING #define EXLEX_IMPLEMENTATION ============================= */
+/* ========================================================================== */
+
+EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
+                                      size_t length);
+EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
+                                         size_t length);
+
+/* ========================================================================== */
+/* ============================ PRIVAT FUNCTIONS ============================ */
+/* ========================================================================== */
 
 LEXDEF Token lexer_eof_token(Lexer *lexer);
 LEXDEF Token lexer_error(Lexer *lexer);
@@ -195,16 +211,9 @@ LEXDEF int lexer_check_boundery(Lexer *lexer);
 LEXDEF int lexer_check_boundery_next(Lexer *lexer);
 
 /* ========================================================================== */
-
 LEXDEF int is_escape_seq(char c);
 LEXDEF int is_sybol_alnum_and_(char c);
 LEXDEF int is_sybol_alpha_and_(char c);
-
 /* ========================================================================== */
-
-EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
-                                      size_t length);
-EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
-                                         size_t length);
 
 #endif // LEXER_H_

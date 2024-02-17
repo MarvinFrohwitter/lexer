@@ -1,0 +1,9 @@
+lexer
+lexer-intermediate
+
+lexer.o
+liblexer.a
+
+test.txt
+config.log
+

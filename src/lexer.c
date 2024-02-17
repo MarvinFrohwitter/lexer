@@ -5,7 +5,6 @@
 #include <stdlib.h>
 #include <string.h>
 
-// #define EXLEX_IMPLEMENTATION
 #include "lexer.h"
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))

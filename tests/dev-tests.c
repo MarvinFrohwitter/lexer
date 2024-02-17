@@ -1,7 +1,6 @@
 #define GUTILS_IMPLEMENTATION
 #include "gutils.h"
 
-#define LEXDEF static inline
 #include "lexer.h"
 #include <stdio.h>
 
@@ -12,6 +11,7 @@ typedef struct FileSring {
 } FileString;
 
 int main(int argc, char **argv) {
+
   char *programm = shift_args(&argc, &argv);
   fprintf(stderr, "INFO: The %s is executing.\n", programm);
 
