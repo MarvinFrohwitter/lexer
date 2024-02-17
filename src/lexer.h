@@ -3,6 +3,18 @@
 #define LEXER_H_
 #include <stddef.h>
 
+#ifndef BASICLEXDEF
+#define BASICLEXDEF
+#endif // LEXDEF
+
+#ifndef LEXDEF
+#define LEXDEF static inline
+#endif // LEXDEF
+
+#ifndef EXLEXDEF
+#define EXLEXDEF static inline
+#endif // EXLEXDEF
+
 typedef struct Lexer {
   char *content;
   size_t content_lenght;
@@ -157,43 +169,42 @@ typedef struct Token {
 } Token;
 
 /* ========================================================================== */
-// TODO: Präfix for functions static inline
 
-Lexer *lexer_new(char *content, size_t size, size_t position);
-void lexer_del(Lexer *lexer);
-Token lexer_next(Lexer *lexer);
-Token lexer_eof_token(Lexer *lexer);
-Token lexer_error(Lexer *lexer);
-void lexer_trace_token(Lexer *lexer, Token *token);
-Token lexer_invalid_token(Lexer *lexer);
-Token lexer_chop_char(Lexer *lexer, size_t count);
+BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position);
+BASICLEXDEF void lexer_del(Lexer *lexer);
+BASICLEXDEF Token lexer_next(Lexer *lexer);
 
-int lexer_check_is_number(Lexer *lexer, Token *token);
-int lexer_check_is_preproc(Lexer *lexer, Token *token);
-int lexer_check_is_str(Lexer *lexer, Token *token);
-int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi);
+LEXDEF Token lexer_eof_token(Lexer *lexer);
+LEXDEF Token lexer_error(Lexer *lexer);
+LEXDEF void lexer_trace_token(Lexer *lexer, Token *token);
+LEXDEF Token lexer_invalid_token(Lexer *lexer);
+LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count);
 
-void lexer_trim_left(Lexer *lexer);
-int lexer_next_char_is(Lexer *lexer, char c);
-int lexer_char_is(Lexer *lexer, char c);
-int lexer_is_keyword(Lexer *lexer, size_t length);
-int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
-int lexer_check_punctuator_lookahead(Lexer *lexer);
-int lexer_check_boundery(Lexer *lexer);
-int lexer_check_boundery_next(Lexer *lexer);
+LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token);
+LEXDEF int lexer_check_is_preproc(Lexer *lexer, Token *token);
+LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token);
+LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi);
 
-/* ========================================================================== */
-int is_escape_seq(char c);
-int is_sybol_alnum_and_(char c);
-int is_sybol_alpha_and_(char c);
+LEXDEF void lexer_trim_left(Lexer *lexer);
+LEXDEF int lexer_next_char_is(Lexer *lexer, char c);
+LEXDEF int lexer_char_is(Lexer *lexer, char c);
+LEXDEF int lexer_is_keyword(Lexer *lexer, size_t length);
+LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
+LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
+LEXDEF int lexer_check_boundery(Lexer *lexer);
+LEXDEF int lexer_check_boundery_next(Lexer *lexer);
 
 /* ========================================================================== */
 
-#ifndef EXLEXDEF
-#define EXLEXDEF static inline
-#endif // EXLEXDEF
+LEXDEF int is_escape_seq(char c);
+LEXDEF int is_sybol_alnum_and_(char c);
+LEXDEF int is_sybol_alpha_and_(char c);
 
-EXLEXDEF void lexer_keyword_set_token(Lexer *l, Token *t, size_t len);
-EXLEXDEF void lexer_punctuator_set_token(Lexer *l, Token *t, size_t len);
+/* ========================================================================== */
+
+EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
+                                      size_t length);
+EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
+                                         size_t length);
 
 #endif // LEXER_H_

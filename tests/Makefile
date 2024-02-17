@@ -2,9 +2,12 @@
 
 SRC = dev-tests.c
 
-CC = cc
+CC = clang
+INCLUDE = -I "${HOME}/Entwicklung/c/lexer/src/" -I "${HOME}/Entwicklung/c/gutils/"
+LIBARY = -L "${HOME}/Entwicklung/c/lexer/src/"
 LIBS = ../src/lexer.c
-CFLAGS = -O0 -pedantic -Wall -Wextra -std=c11 -ggdb
+CFLAGS = -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
+CFLAGS += -static
 
 all: options lexer
 
@@ -15,8 +18,8 @@ options:
 	@echo "CC     = ${CC}"
 
 lexer:
-	${CC} -o lexer-intermediate ${SRC} ${CFLAGS} ${LIBS}
-	${CC} -o $@ ${SRC} ${CFLAGS} -DEXLEX_IMPLEMENTATION ${LIBS}
+	${CC} ${CFLAGS} ${INCLUDE} -o lexer-intermediate ${SRC} ${LIBARY} -llexer
+	${CC} -DEXLEX_IMPLEMENTATION ${CFLAGS} ${INCLUDE} -o $@ ${SRC} ${LIBS}
 
 clean:
 	rm -f lexer lexer-intermediate

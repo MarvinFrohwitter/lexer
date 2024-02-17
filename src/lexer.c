@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-#define EXLEX_IMPLEMENTATION
+// #define EXLEX_IMPLEMENTATION
 #include "lexer.h"
 
 #define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
@@ -15,7 +15,7 @@
 /* @param size The content length. */
 /* @param The position of the content the lexer should begin tokenise. */
 /* @return Lexer The function returns a new initilized lexer. */
-Lexer *lexer_new(char *content, size_t size, size_t position) {
+BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
   Lexer *lexer = malloc(sizeof(Lexer));
   if (lexer == NULL) {
     fprintf(stderr,
@@ -32,7 +32,7 @@ Lexer *lexer_new(char *content, size_t size, size_t position) {
 
 /* The function lexer_del() frees the allocated lexer. */
 /* @param lexer The given Lexer that contains the current state. */
-void lexer_del(Lexer *lexer) { free(lexer); }
+BASICLEXDEF void lexer_del(Lexer *lexer) { free(lexer); }
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
 /* count. So it cuts of the content that the lexer tokenise form the left. */
@@ -40,7 +40,7 @@ void lexer_del(Lexer *lexer) { free(lexer); }
 /* @param count The amount of chars that will be choped from the left of the */
 /* content. */
 /* @return Token the Error token or the Invalid token. */
-Token lexer_chop_char(Lexer *lexer, size_t count) {
+LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
   for (size_t i = 0; i < count; i++) {
     if (!lexer_check_boundery(lexer)) {
       return lexer_error(lexer);
@@ -56,7 +56,7 @@ Token lexer_chop_char(Lexer *lexer, size_t count) {
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token that has values of kind=INVALID, size=1 and content= current */
 /* lexer position. */
-Token lexer_invalid_token(Lexer *lexer) {
+LEXDEF Token lexer_invalid_token(Lexer *lexer) {
   Token token;
   token.kind = INVALID;
   token.size = 1;
@@ -70,7 +70,7 @@ Token lexer_invalid_token(Lexer *lexer) {
 /* @param lexer The given Lexer that contains the current state. */
 /* @return boolean True, if the lexer position is in the content length, */
 /* otherwise false. */
-int lexer_check_boundery(Lexer *lexer) {
+LEXDEF int lexer_check_boundery(Lexer *lexer) {
   if (lexer->position < lexer->content_lenght) {
     return 1;
   }
@@ -82,7 +82,7 @@ int lexer_check_boundery(Lexer *lexer) {
 /* @param lexer The given Lexer that contains the current state. */
 /* @return boolean True, if the lexer position+1 is in the content length, */
 /* otherwise false. */
-int lexer_check_boundery_next(Lexer *lexer) {
+LEXDEF int lexer_check_boundery_next(Lexer *lexer) {
   if (lexer->position + 1 < lexer->content_lenght) {
     return 1;
   }
@@ -95,7 +95,7 @@ int lexer_check_boundery_next(Lexer *lexer) {
 /* @param c The character that will be compared with the lexer position. */
 /* @return boolean True, if the given char c is identical to the next char in */
 /* the content that lexer tokenise. */
-int lexer_next_char_is(Lexer *lexer, char c) {
+LEXDEF int lexer_next_char_is(Lexer *lexer, char c) {
 
   if (c == lexer->content[lexer->position + 1]) {
 
@@ -111,7 +111,7 @@ int lexer_next_char_is(Lexer *lexer, char c) {
 /* @return boolean True, if the given char c is identical to the current char in
  */
 /* the content that lexer tokenise. */
-int lexer_char_is(Lexer *lexer, char c) {
+LEXDEF int lexer_char_is(Lexer *lexer, char c) {
   if (c == lexer->content[lexer->position]) {
     return 1;
   }
@@ -124,7 +124,7 @@ int lexer_char_is(Lexer *lexer, char c) {
 /* White space Characters: Blank space, newline, horizontal tab, carriage */
 /* return and form feed. */
 /* @param lexer The given Lexer that contains the current state. */
-void lexer_trim_left(Lexer *lexer) {
+LEXDEF void lexer_trim_left(Lexer *lexer) {
   while (lexer_check_boundery(lexer) &&
          isspace(lexer->content[lexer->position])) {
     lexer_chop_char(lexer, 1);
@@ -139,7 +139,7 @@ void lexer_trim_left(Lexer *lexer) {
 /* @return boolean True, if the content at the current position has a keyword,
  */
 /* otherwise false. */
-int lexer_is_keyword(Lexer *lexer, size_t length) {
+LEXDEF int lexer_is_keyword(Lexer *lexer, size_t length) {
   size_t array_count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
 
   for (size_t i = 0; i < array_count; i++) {
@@ -162,7 +162,7 @@ int lexer_is_keyword(Lexer *lexer, size_t length) {
 /* @return boolean True, if the content at the current position has a punctuator
  */
 /* of given length, otherwise false. */
-int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
+LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
   if (max == 0) {
     max = sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]) - 1;
   }
@@ -183,7 +183,7 @@ int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
 /* @return boolean True, if the next character is also part of the punctuator,
  */
 /* otherwise false. On error -1.*/
-int lexer_check_punctuator_lookahead(Lexer *lexer) {
+LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
 
   if (!lexer_check_boundery_next(lexer)) {
     return -1;
@@ -260,7 +260,7 @@ int lexer_check_punctuator_lookahead(Lexer *lexer) {
 /* @return int The error code of the corresponding action result. It returns one
  * if the function computes a number in the token or 0 if the token could
  * potentially be a punctuator. -1 if the token is the error token. */
-int lexer_check_is_number(Lexer *lexer, Token *token) {
+LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_escape = 0;
   int is_floating = 0;
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
@@ -476,7 +476,7 @@ errortoken: {
 /* @param token The token that will be modified and contains the final token
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
-int lexer_check_is_preproc(Lexer *lexer, Token *token) {
+LEXDEF int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 
   size_t position = lexer->position;
   lexer_chop_char(lexer, 1);
@@ -499,7 +499,7 @@ int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 /* @param token The token that will be modified and contains the final token
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
-int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
+LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 
   size_t position = lexer->position;
   {
@@ -532,7 +532,7 @@ int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 /* @param token The token that will be modified and contains the final token
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
-int lexer_check_is_str(Lexer *lexer, Token *token) {
+LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
 
   if (!lexer_check_boundery_next(lexer)) {
     return 0;
@@ -575,7 +575,7 @@ int lexer_check_is_str(Lexer *lexer, Token *token) {
 /* @return boolean True, if the given character is an escape char, otherwise
  */
 /* false. */
-int is_escape_seq(char c) {
+LEXDEF int is_escape_seq(char c) {
   if (c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f' ||
       c == '\\') {
     return 1;
@@ -590,7 +590,7 @@ int is_escape_seq(char c) {
 /* @return boolean True, if the given character is part of the alnum group and
  */
 /* the additional underscore. */
-int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
+LEXDEF int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 
 /* The function is_sybol_alpha_and_() computes the, if the characters in the
  */
@@ -599,7 +599,7 @@ int is_sybol_alnum_and_(char c) { return isalnum(c) || c == '_'; }
 /* @return boolean True, if the given character is part of the alpha group and
  */
 /* the additional underscore. */
-int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
+LEXDEF int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 
 /* =========================================================================
  */
@@ -610,7 +610,7 @@ int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* STRINGLITERAL, PUNCTUATOR, INVALID */
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
-Token lexer_next(Lexer *lexer) {
+BASICLEXDEF Token lexer_next(Lexer *lexer) {
   Token token = {0};
   token.kind = INVALID;
 
@@ -750,7 +750,7 @@ Token lexer_next(Lexer *lexer) {
 /* The  function creates the EOF_TOKEN */
 /* @param lexer The Lexer that will be modified. */
 /* @return token The token that will be modified and contains the EOF_TOKEN */
-Token lexer_eof_token(Lexer *lexer) {
+LEXDEF Token lexer_eof_token(Lexer *lexer) {
   Token token;
   token.kind = EOF_TOKEN;
   token.size = lexer->content_lenght;
@@ -762,7 +762,7 @@ Token lexer_eof_token(Lexer *lexer) {
 /* broken token */
 /* @param lexer The Lexer that will be modified. */
 /* @param token The token that will be modified and contains the final token*/
-void lexer_trace_token(Lexer *lexer, Token *token) {
+LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   size_t current_lexer_posion = lexer->position;
 
   while (lexer->position != 0 && lexer->content[lexer->position] != ' ' &&
@@ -785,7 +785,7 @@ void lexer_trace_token(Lexer *lexer, Token *token) {
 /* the corresponding error message to standard error */
 /* @param lexer The Lexer that will be modified. */
 /* @return Token The ERROR token.  */
-Token lexer_error(Lexer *lexer) {
+LEXDEF Token lexer_error(Lexer *lexer) {
 
   Token t;
   int checkend = 0;

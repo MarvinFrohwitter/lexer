@@ -1,5 +1,4 @@
 CC = clang
-LIBS =
 CFLAGS = -x c -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
 
 all: options lexer
@@ -12,8 +11,9 @@ options:
 
 lexer:
 	${CC} ${CFLAGS} -c lexer.c
+	ar -r liblexer.a lexer.o
 
 clean:
-	rm -f lexer.o
+	rm -f lexer.o liblexer.a
 
 .PHONY: all clean options lexer

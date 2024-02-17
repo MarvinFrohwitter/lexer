@@ -1,10 +1,9 @@
 #define GUTILS_IMPLEMENTATION
-#include "../../gutils/gutils.h"
+#include "gutils.h"
 
-#define EXLEX_IMPLEMENTATION
-#include "../src/lexer.h"
+#define LEXDEF static inline
+#include "lexer.h"
 #include <stdio.h>
-#include <string.h>
 
 typedef struct FileSring {
   char *items;
@@ -12,10 +11,33 @@ typedef struct FileSring {
   size_t capacity;
 } FileString;
 
-int main(void) {
+int main(int argc, char **argv) {
+  char *programm = shift_args(&argc, &argv);
+  fprintf(stderr, "INFO: The %s is executing.\n", programm);
+
+// #define INTERNAL 1
+#ifdef INTERNAL
+#include <string.h>
 
   char *content_to_parse = "G "
-                           // "4567L "
+                           "((102/10));"
+                           // "'\0' "
+                           // "'\\' "
+                           // "'0' "
+
+                           // "12.3e10F/123e10F"
+                           // "7ULL "
+                           // "7LL "
+                           // "a*(b*c+2)*PI "
+                           // "7L "
+                           // "4567ULL, "
+                           // "(836.12f*123.4L), "
+                           // "836.12ULL, "
+                           // "836.12L "
+                           // "836.12f, "
+                           // "456.7f "
+                           // "863.4f, "
+                           // "8634f, "
                            // "4567ULL "
                            // "47 "
                            // "437; "
@@ -26,8 +48,8 @@ int main(void) {
 
                            // "1234ULLH "
                            // "long "
-                           "= .,"
-                           "long int = 'ah' "
+                           // "= .,"
+                           // "long int = 'a' "
                            // "void \n "
 
                            // "\" Das ist ein string\"hallo "
@@ -40,6 +62,13 @@ int main(void) {
                            // // Debug fail tests:
                            // "1e+4"
                            // "3e-6 "
+                           // "3e8 "
+                           // "3e8L "
+                           // "33.2e8F "
+                           // "..2e8F "
+                           // "1.3.2e8F "
+                           // "1.e8F "
+                           // "3e+662337 "
                            // "3e+662337 "
                            // "3e-637 "
                            // "33e+z "
@@ -55,7 +84,7 @@ int main(void) {
 
                            // "hallo \n"
                            // "/**/    int\n"
-                           // // // Debug wrong token tests:
+                           // // Debug wrong token tests:
                            // "/* BOB*/a"
                            // "/*/*\" */    int\n"
 
@@ -67,7 +96,7 @@ int main(void) {
                            // "// /* luchs*/ \n"
                            // "/* BOB \"was ist los\n\"*/\n"
                            // "/* Luchs   */"
-                           // "// \"Haus Hans\"   lasst\" IM string \"\n"
+                           // "\"Haus Hans\"   lasst\" IM string \"\n"
                            // "// \"Haus Hans\"   lasst\n"
                            // "// \"Haus Hans\"   Hase \n  \n"
                            // "// \"Haus Hans\"   lasst\n"
@@ -75,16 +104,21 @@ int main(void) {
                            "0xA     ";
 
   size_t len = strlen(content_to_parse);
+  Lexer *lexer = lexer_new(content_to_parse, len, 0);
 
+#else
   FileString fs = {0};
-  char *filename = "/home/marvin/Entwicklung/c/lexer/src/lexer.c";
-
+  if (argc < 1 || argc > 1) {
+    fprintf(stderr, "ERROR: Usage %s <filepath>\n", programm);
+    return 1;
+  }
+  char *filename = shift_args(&argc, &argv);
+  // char *filename = "/home/marvin/Entwicklung/c/lexer/src/lexer.c";
   FILE *fd = fopen(filename, "rb");
   if (!fd) {
     perror("fopen");
     return 1;
   }
-
   int c;
   while ((c = fgetc(fd)) != EOF) {
     char character = c;
@@ -92,13 +126,13 @@ int main(void) {
     // fprintf(stderr, "THE CHARS : [%c]\n", character);
   }
   fclose(fd);
-
   Lexer *lexer = lexer_new(fs.items, fs.count, 0);
-  // Lexer *lexer = lexer_new(content_to_parse, len, 0);
+#endif
 
   FileString output = {0};
 
   Token t = {0};
+  int error_count = 0;
   while (t.kind != EOF_TOKEN && lexer->content_lenght >= lexer->position) {
     t = lexer_next(lexer);
 
@@ -106,10 +140,22 @@ int main(void) {
     da_append(&output, '\0');
 
     fprintf(stdout, "[%s] form type %u\n", output.items, t.kind);
+    if (t.kind == ERROR) {
+      error_count += 1;
+    }
+    // if (error_count > 1) {
+    //   break;
+    // }
 
     output.count = 0;
   }
-  printf("Succses\n");
+
+  if (error_count) {
+    printf("There are %d errors\n", error_count);
+
+  } else {
+    printf("Succses\n");
+  }
 
   lexer_del(lexer);
 
