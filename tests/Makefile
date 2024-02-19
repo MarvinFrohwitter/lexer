@@ -18,6 +18,7 @@ options:
 	@echo "CC     = ${CC}"
 
 lexer:
+	$(MAKE) -C ${HOME}/Entwicklung/c/lexer/src/
 	${CC} ${CFLAGS} ${INCLUDE} -o lexer-intermediate ${SRC} ${LIBARY} -llexer
 	${CC} -DEXLEX_IMPLEMENTATION ${CFLAGS} ${INCLUDE} -o $@ ${SRC} ${LIBS}
 

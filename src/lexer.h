@@ -59,7 +59,6 @@ typedef enum Kind {
   COMMENT = 9,
   EOF_TOKEN = 10,
 
-#ifdef EXLEX_IMPLEMENTATION
 
   PUNCT_SINGLEQUOTE = 39, // "'"
   PUNCT_BACKSLASH = '\\', // 92
@@ -158,7 +157,6 @@ typedef enum Kind {
   KEYWORD_WHILE = 311,
   KEYWORD_SIZE_T = 312,
 
-#endif // EXLEX_IMPLEMENTATION
 
 } Kind;
 
@@ -181,7 +179,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer);
 /* ===== PROVIDING #define EXLEX_IMPLEMENTATION ============================= */
 /* ========================================================================== */
 
-EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
+LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
                                       size_t length);
 EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
                                          size_t length);

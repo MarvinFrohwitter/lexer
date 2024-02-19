@@ -673,24 +673,24 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
     while (lexer_check_boundery(lexer) &&
-           (!is_escape_seq(lexer->content[lexer->position]) ||
-            !lexer_char_is(lexer, ' '))) {
+           !is_escape_seq(lexer->content[lexer->position]) &&
+           !lexer_char_is(lexer, ' ')) {
 
       lexer_chop_char(lexer, 1);
     }
 
     token.size = lexer->position - token.size;
 
-    if (lexer_is_keyword(lexer, token.size)) {
+    lexer->position = lexer->position - token.size;
+    if (lexer_keyword_set_token(lexer, &token, token.size)) {
+
+      lexer_chop_char(lexer, token.size);
 
       if (token.size < 2) {
         goto single_token;
       }
+#ifndef EXLEX_IMPLEMENTATION
       token.kind = KEYWORD;
-#ifdef EXLEX_IMPLEMENTATION
-      lexer->position = lexer->position - token.size;
-      lexer_keyword_set_token(lexer, &token, token.size);
-      lexer_chop_char(lexer, token.size);
 #endif /* EXLEX_IMPLEMENTATION */
 
       return token;
@@ -900,7 +900,6 @@ handle:
   return token;
 }
 
-#ifdef EXLEX_IMPLEMENTATION
 
 /**
  * @brief The function lexer_keyword_set_token() computes the token type for the
@@ -909,9 +908,10 @@ handle:
  * @param lexer The given Lexer that contains the current state.
  * @param token The token the type is going to be set for.
  * @param length The length the expected keyword has.
+ * @return boolean Returns true if a keyword was found, otherwise false.
  */
-EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
-                                      size_t length) {
+LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
+                                     size_t length) {
 
   switch (length) {
   case 2: {
@@ -1002,10 +1002,16 @@ EXLEXDEF void lexer_keyword_set_token(Lexer *lexer, Token *token,
   } break;
 
   default:
-    assert(0 && "KEYWORD UNREACHABLE");
+    return 0;
   }
+
+  if (token->kind == INVALID) {
+    return 0;
+  }
+  return 1;
 }
 
+#ifdef EXLEX_IMPLEMENTATION
 /**
  * @brief The function lexer_punctuator_set_token() sets the corresponding token
  * type of the current lexer position for the punctuators.
