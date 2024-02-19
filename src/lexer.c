@@ -755,24 +755,29 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     return token;
   }
 
-  int valid_lookahead = 0;
   // Check for punctuators
   if (lexer_check_boundery(lexer)) {
     token.size = lexer->position;
     if (lexer_is_punctuator(lexer, 1, 0)) {
-      token.kind = PUNCTUATOR;
-      if (!lexer_check_punctuator_lookahead(lexer)) {
+
+      int lookahead = lexer_check_punctuator_lookahead(lexer);
+      if (lookahead < 1) {
         token.size = 1;
-        valid_lookahead = 1;
-      }
-      if (!valid_lookahead) {
+      } else {
         token.size = lexer->position - token.size;
       }
 
-#ifdef EXLEX_IMPLEMENTATION
-      lexer->position = lexer->position - token.size;
-      lexer_punctuator_set_token(lexer, &token, token.size);
-      lexer_chop_char(lexer, token.size);
+      if (lookahead == -1) {
+        lexer_punctuator_set_token(lexer, &token, token.size);
+        lexer_chop_char(lexer, 1);
+      } else {
+        lexer->position = lexer->position - token.size;
+        lexer_punctuator_set_token(lexer, &token, token.size);
+        lexer_chop_char(lexer, token.size);
+      }
+
+#ifndef EXLEX_IMPLEMENTATION
+      token.kind = PUNCTUATOR;
 #endif /* EXLEX_IMPLEMENTATION */
 
       return token;
