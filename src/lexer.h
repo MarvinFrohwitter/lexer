@@ -11,10 +11,6 @@
 #define LEXDEF static inline
 #endif // LEXDEF
 
-#ifndef EXLEXDEF
-#define EXLEXDEF static inline
-#endif // EXLEXDEF
-
 typedef struct Lexer {
   char *content;
   size_t content_lenght;
@@ -175,16 +171,6 @@ BASICLEXDEF void lexer_del(Lexer *lexer);
 BASICLEXDEF Token lexer_next(Lexer *lexer);
 
 /* ========================================================================== */
-/* ===== EXTENDED FUNCTIONS PRIVAT BUT PUBLIC FUNCTIONALITY ENABLED BY ===== */
-/* ===== PROVIDING #define EXLEX_IMPLEMENTATION ============================= */
-/* ========================================================================== */
-
-LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
-                                      size_t length);
-EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
-                                         size_t length);
-
-/* ========================================================================== */
 /* ============================ PRIVAT FUNCTIONS ============================ */
 /* ========================================================================== */
 
@@ -207,6 +193,9 @@ LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
 LEXDEF int lexer_check_boundery(Lexer *lexer);
 LEXDEF int lexer_check_boundery_next(Lexer *lexer);
+
+LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length);
+LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token, size_t length);
 
 /* ========================================================================== */
 LEXDEF int is_escape_seq(char c);

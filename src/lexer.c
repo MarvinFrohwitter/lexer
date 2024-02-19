@@ -900,7 +900,6 @@ handle:
   return token;
 }
 
-
 /**
  * @brief The function lexer_keyword_set_token() computes the token type for the
  * current lexer position for the keywords.
@@ -910,8 +909,7 @@ handle:
  * @param length The length the expected keyword has.
  * @return boolean Returns true if a keyword was found, otherwise false.
  */
-LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
-                                     size_t length) {
+LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length) {
 
   switch (length) {
   case 2: {
@@ -1011,7 +1009,6 @@ LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
   return 1;
 }
 
-#ifdef EXLEX_IMPLEMENTATION
 /**
  * @brief The function lexer_punctuator_set_token() sets the corresponding token
  * type of the current lexer position for the punctuators.
@@ -1019,9 +1016,10 @@ LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token,
  * @param lexer The given Lexer that contains the current state.
  * @param token The token the type is going to be set for.
  * @param length The length the expected keyword has.
+ * @return boolean Returns true if a punctuator was found, otherwise false.
  */
-EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
-                                         size_t length) {
+LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
+                                        size_t length) {
 
   switch (length) {
   case 1: {
@@ -1108,7 +1106,7 @@ EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
       token->kind = PUNCT_ASSIGN;
       break;
     default:
-      assert(0 && "PUNCTUATOR ONE CHAR UNREACHABLE");
+      return 0;
     }
   } break;
   case 2: {
@@ -1153,7 +1151,7 @@ EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
     else if (strncmp("##", &lexer->content[lexer->position], length) == 0)
       token->kind = PUNCT_HHTAG;
     else
-      assert(0 && "PUNCTUATOR TOW CHAR UNREACHABLE");
+      return 0;
   } break;
   case 3: {
     if (strncmp("...", &lexer->content[lexer->position], length) == 0)
@@ -1163,14 +1161,15 @@ EXLEXDEF void lexer_punctuator_set_token(Lexer *lexer, Token *token,
     else if (strncmp(">>=", &lexer->content[lexer->position], length) == 0)
       token->kind = PUNCT_RIGHTSHIFTEQ;
     else {
-      assert(0 && "PUNCTUATOR THREE CHAR UNREACHABLE");
+      return 0;
     }
   } break;
   default:
-    assert(0 && "PUNCTUATOR UNREACHABLE");
-
-    break;
+    return 0;
   }
-}
 
-#endif // EXLEX_IMPLEMENTATION
+  if (token->kind == INVALID) {
+    return 0;
+  }
+  return 1;
+}
