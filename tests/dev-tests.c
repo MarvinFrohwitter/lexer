@@ -106,7 +106,7 @@ int main(int argc, char **argv) {
                            // "// \"Haus Hans\"   Hase \n  \n"
                            // "// \"Haus Hans\"   lasst\n"
                            "size_t \n"
-                           "0xA     ";
+                           "234.;";
 
   size_t len = strlen(content_to_parse);
   Lexer *lexer = lexer_new(content_to_parse, len, 0);
@@ -138,7 +138,7 @@ int main(int argc, char **argv) {
 
   Token t = {0};
   int error_count = 0;
-  while (t.kind != EOF_TOKEN && lexer->content_lenght >= lexer->position) {
+  while (t.kind != EOF_TOKEN && lexer->content_length >= lexer->position) {
     t = lexer_next(lexer);
 
     da_append_many(&output, t.content, t.size);

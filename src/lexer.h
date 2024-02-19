@@ -13,7 +13,7 @@
 
 typedef struct Lexer {
   char *content;
-  size_t content_lenght;
+  size_t content_length;
   size_t position;
 
 } Lexer;

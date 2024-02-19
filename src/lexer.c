@@ -22,7 +22,7 @@ BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
     return NULL;
   }
 
-  lexer->content_lenght = size;
+  lexer->content_length = size;
   lexer->content = content;
   lexer->position = position;
 
@@ -70,7 +70,7 @@ LEXDEF Token lexer_invalid_token(Lexer *lexer) {
 /* @return boolean True, if the lexer position is in the content length, */
 /* otherwise false. */
 LEXDEF int lexer_check_boundery(Lexer *lexer) {
-  if (lexer->position < lexer->content_lenght) {
+  if (lexer->position < lexer->content_length) {
     return 1;
   }
   return 0;
@@ -82,7 +82,7 @@ LEXDEF int lexer_check_boundery(Lexer *lexer) {
 /* @return boolean True, if the lexer position+1 is in the content length, */
 /* otherwise false. */
 LEXDEF int lexer_check_boundery_next(Lexer *lexer) {
-  if (lexer->position + 1 < lexer->content_lenght) {
+  if (lexer->position + 1 < lexer->content_length) {
     return 1;
   }
   return 0;
@@ -479,7 +479,7 @@ LEXDEF int lexer_check_is_preproc(Lexer *lexer, Token *token) {
 
   size_t position = lexer->position;
   lexer_chop_char(lexer, 1);
-  if (lexer->position >= lexer->content_lenght) {
+  if (lexer->position >= lexer->content_length) {
     lexer->position = lexer->position - 1;
     return 0;
   }
@@ -614,7 +614,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
   token.kind = INVALID;
 
   lexer_trim_left(lexer);
-  if (lexer->position > lexer->content_lenght) {
+  if (lexer->position > lexer->content_length) {
     return lexer_eof_token(lexer);
   }
 
@@ -754,8 +754,8 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 LEXDEF Token lexer_eof_token(Lexer *lexer) {
   Token token;
   token.kind = EOF_TOKEN;
-  token.size = lexer->content_lenght;
-  token.content = &lexer->content[lexer->content_lenght];
+  token.size = lexer->content_length;
+  token.content = &lexer->content[lexer->content_length];
   return token;
 }
 
@@ -781,7 +781,8 @@ LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   token->kind = ERROR;
 }
 
-/* The function lexer_error() handels the cases if a default token should be */
+/* The function lexer_error() handels the cases if a default token should be
+ */
 /* returned or an explicit error has to be handelt. As well as print */
 /* the corresponding error message to standard error */
 /* @param lexer The Lexer that will be modified. */
@@ -794,13 +795,15 @@ LEXDEF Token lexer_error(Lexer *lexer) {
   size_t current_lexer_posion = lexer->position;
   const char c = lexer->content[lexer->position];
 
-  /* ------------------------------ EOF TOKEN ------------------------------ */
+  /* ------------------------------ EOF TOKEN ------------------------------
+   */
 
   if (!lexer_check_boundery(lexer)) {
     return lexer_eof_token(lexer);
   }
 
-  /* ------------------ IF POSSIBLE DETECT THE TOKEN. ---------------------- */
+  /* ------------------ IF POSSIBLE DETECT THE TOKEN. ----------------------
+   */
 
   lexer_trace_token(lexer, &t);
 
@@ -901,8 +904,8 @@ handle:
 }
 
 /**
- * @brief The function lexer_keyword_set_token() computes the token type for the
- * current lexer position for the keywords.
+ * @brief The function lexer_keyword_set_token() computes the token type for
+ * the current lexer position for the keywords.
  *
  * @param lexer The given Lexer that contains the current state.
  * @param token The token the type is going to be set for.
@@ -1010,8 +1013,8 @@ LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length) {
 }
 
 /**
- * @brief The function lexer_punctuator_set_token() sets the corresponding token
- * type of the current lexer position for the punctuators.
+ * @brief The function lexer_punctuator_set_token() sets the corresponding
+ * token type of the current lexer position for the punctuators.
  *
  * @param lexer The given Lexer that contains the current state.
  * @param token The token the type is going to be set for.
@@ -1019,7 +1022,7 @@ LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length) {
  * @return boolean Returns true if a punctuator was found, otherwise false.
  */
 LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
-                                        size_t length) {
+                                      size_t length) {
 
   switch (length) {
   case 1: {
