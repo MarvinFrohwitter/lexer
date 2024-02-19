@@ -673,7 +673,9 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
     while (lexer_check_boundery(lexer) &&
-           is_sybol_alpha_and_(lexer->content[lexer->position])) {
+           (!is_escape_seq(lexer->content[lexer->position]) ||
+            !lexer_char_is(lexer, ' '))) {
+
       lexer_chop_char(lexer, 1);
     }
 

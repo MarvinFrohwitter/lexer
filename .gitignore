@@ -5,5 +5,5 @@ lexer.o
 liblexer.a
 
 test.txt
-config.log
+*.log
 

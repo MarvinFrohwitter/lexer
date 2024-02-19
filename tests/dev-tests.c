@@ -15,11 +15,16 @@ int main(int argc, char **argv) {
   char *programm = shift_args(&argc, &argv);
   fprintf(stderr, "INFO: The %s is executing.\n", programm);
 
-// #define INTERNAL 1
+#define INTERNAL 1
 #ifdef INTERNAL
 #include <string.h>
 
   char *content_to_parse = "G "
+                           "uint32_t "
+                           "int "
+                           "while_t "
+                           "int8_t "
+                           "uint8_t "
                            "((102/10));"
                            // "'\0' "
                            // "'\\' "
