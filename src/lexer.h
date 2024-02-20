@@ -13,8 +13,10 @@
 
 typedef struct Lexer {
   char *content;
-  size_t content_length;
-  size_t position;
+  unsigned long long int content_length;
+  unsigned long long int position;
+  // size_t content_length;
+  // size_t position;
 
 } Lexer;
 
@@ -27,12 +29,12 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\f', '\\'};
 static const char *PUNCTUATORS[] = {
     // NOTE: It is important that the '.' is at the end of the array! It is
     // checked by the number function for floating point calculations.
+    // And by the lexer_is_punctuator() function.
     ",",  "]", ")", "=", ";", "{", "}", "&", "*", "+", "-", "~", "|", "/",
     "\\", "%", "<", ">", "^", "|", "?", ":", "(", "[", "!", "'", ".", NULL};
 
 /* The variable KEYWORDS is a pointer to the array of single tokens of type */
 /* KEYWORD. It contains the tokens to match on. */
-// TODO: SUPPORT all posix stdint varients like uint32_t
 static const char *KEYWORDS[] = {
     "auto",     "break",    "size_t", "case",    "char",   "const",
     "continue", "default",  "do",     "double",  "else",   "enum",

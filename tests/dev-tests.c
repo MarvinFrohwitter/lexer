@@ -15,7 +15,7 @@ int main(int argc, char **argv) {
   char *programm = shift_args(&argc, &argv);
   fprintf(stderr, "INFO: The %s is executing.\n", programm);
 
-#define INTERNAL 1
+// #define INTERNAL 1
 #ifdef INTERNAL
 #include <string.h>
 
@@ -137,9 +137,11 @@ int main(int argc, char **argv) {
   FileString output = {0};
 
   Token t = {0};
+  size_t counter = 0;
   int error_count = 0;
   while (t.kind != EOF_TOKEN && lexer->content_length >= lexer->position) {
     t = lexer_next(lexer);
+    counter++;
 
     da_append_many(&output, t.content, t.size);
     da_append(&output, '\0');
@@ -148,12 +150,14 @@ int main(int argc, char **argv) {
     if (t.kind == ERROR) {
       error_count += 1;
     }
-    // if (error_count > 1) {
-    //   break;
-    // }
+    if (error_count > 1) {
+      break;
+    }
 
     output.count = 0;
   }
+  printf("There are %zu tokens\n", counter);
+
 
   if (error_count) {
     printf("There are %d errors\n", error_count);
@@ -162,6 +166,7 @@ int main(int argc, char **argv) {
     printf("Succses\n");
   }
 
+  da_free(&output);
   lexer_del(lexer);
 
   return 0;

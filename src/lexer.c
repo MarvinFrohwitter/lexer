@@ -31,7 +31,10 @@ BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
 
 /* The function lexer_del() frees the allocated lexer. */
 /* @param lexer The given Lexer that contains the current state. */
-BASICLEXDEF void lexer_del(Lexer *lexer) { free(lexer); }
+BASICLEXDEF void lexer_del(Lexer *lexer) {
+  free(lexer->content);
+  free(lexer);
+}
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
 /* count. So it cuts of the content that the lexer tokenise form the left. */
@@ -379,6 +382,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
               // lexer->position = punct_pos;
               Token token = {0};
               if (lexer_punctuator_set_token(lexer, &token, punct_length))
+                // @Speed This is slower in log performance test
                 // if (lexer_is_punctuator(lexer, punct_length, 0))
                 continue;
               else {
