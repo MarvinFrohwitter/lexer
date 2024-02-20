@@ -150,7 +150,7 @@ int main(int argc, char **argv) {
     if (t.kind == ERROR) {
       error_count += 1;
     }
-    if (error_count > 1) {
+    if (error_count > 0) {
       break;
     }
 

@@ -25,6 +25,7 @@ BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
   lexer->content_length = size;
   lexer->content = content;
   lexer->position = position;
+  lexer->next_start_position = lexer->position;
 
   return lexer;
 }
@@ -263,26 +264,16 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
  * if the function computes a number in the token or 0 if the token could
  * potentially be a punctuator. -1 if the token is the error token. */
 LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
-  int is_escape = 0;
   int is_floating = 0;
-  size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   token->kind = NUMBER;
   size_t pos = lexer->position;
 
-  // TODO: @Cutandpate @Cleanup
   if (lexer_char_is(lexer, '0') && lexer_check_boundery_next(lexer) &&
       (lexer_next_char_is(lexer, 'b') || lexer_next_char_is(lexer, 'B'))) {
     lexer_chop_char(lexer, 2);
 
-    for (size_t j = 0; j < length; j++) {
-      if (lexer_char_is(lexer, ESCAPE[j])) {
-        is_escape = 1;
-        break;
-      }
-    }
-
-    if (is_escape || lexer_char_is(lexer, ' ') ||
-        !lexer_check_boundery(lexer)) {
+    if (!lexer_check_boundery(lexer) ||
+        !(lexer_char_is(lexer, '0') || lexer_char_is(lexer, '1'))) {
       goto errortoken;
     }
 
@@ -300,15 +291,8 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
               lexer_next_char_is(lexer, 'X'))) {
     lexer_chop_char(lexer, 2);
 
-    for (size_t j = 0; j < length; j++) {
-      if (lexer_char_is(lexer, ESCAPE[j])) {
-        is_escape = 1;
-        break;
-      }
-    }
-
-    if (is_escape || lexer_char_is(lexer, ' ') ||
-        !lexer_check_boundery(lexer)) {
+    if (!lexer_check_boundery(lexer) ||
+        !isxdigit(lexer->content[lexer->position])) {
       goto errortoken;
     }
 
@@ -365,8 +349,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
           }
 
           while (lexer_check_boundery(lexer) &&
-                 !is_escape_seq(lexer->content[lexer->position]) &&
-                 !lexer_char_is(lexer, ' ')) {
+                 !lexer_is_escape_seq_or_space(lexer)) {
             Token token = lexer_chop_char(lexer, 1);
             if (token.kind == ERROR)
               break;
@@ -459,7 +442,6 @@ postfixcheck: {
       goto compute_return;
     } break;
     case ' ':
-      // case '/':
       goto compute_return;
       break;
     default:
@@ -512,7 +494,7 @@ postfixcheck: {
         i = maxiter;
         break;
       } else {
-        fprintf(stderr, "postfixcheck faild with:%c at %zu\n",
+        fprintf(stderr, "postfixcheck faild with:%c at %llu\n",
                 lexer->content[lexer->position], lexer->position);
         goto errortoken;
       }
@@ -616,10 +598,6 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
       lexer_chop_char(lexer, 1);
       break;
     } else if (is_escape_seq(lexer->content[lexer->position])) {
-      // lexer_chop_char(lexer, 1);
-      // if (!lexer_check_boundery(lexer)) {
-      //     return 0;
-      // }
       {
         Token token = lexer_chop_char(lexer, 1);
         if (token.kind == ERROR) {
@@ -634,8 +612,17 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
   return 1;
 }
 
-/* =========================================================================
- */
+/* The function ilexer_is_escape_seq_or_space() returns, if the given char is
+ * equal to an escape character or a space. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @return boolean True, if the current lexer postion is an escape char or a
+ * space, otherwise false. */
+LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
+  return is_escape_seq(lexer->content[lexer->position]) ||
+         lexer_char_is(lexer, ' ');
+}
+
+/* ========================================================================= */
 
 /* The function is_escape_seq() returns, if the given char is equal to an
  * escape
@@ -646,9 +633,11 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
  */
 /* false. */
 LEXDEF int is_escape_seq(char c) {
-  if (c == '\n' || c == '\r' || c == '\t' || c == '\v' || c == '\f' ||
-      c == '\\') {
-    return 1;
+  size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
+  for (size_t j = 0; j < length; j++) {
+    if (c == ESCAPE[j]) {
+      return 1;
+    }
   }
   return 0;
 }
@@ -681,6 +670,7 @@ LEXDEF int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
 BASICLEXDEF Token lexer_next(Lexer *lexer) {
+  lexer->next_start_position = lexer->position;
   Token token = {0};
   token.kind = INVALID;
 
@@ -744,8 +734,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     size_t startpos = token.size = lexer->position;
     lexer_chop_char(lexer, 1);
     while (lexer_check_boundery(lexer) &&
-           !is_escape_seq(lexer->content[lexer->position]) &&
-           !lexer_char_is(lexer, ' ')) {
+           !lexer_is_escape_seq_or_space(lexer)) {
 
       lexer_chop_char(lexer, 1);
     }
@@ -842,8 +831,7 @@ LEXDEF Token lexer_eof_token(Lexer *lexer) {
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   size_t current_lexer_posion = lexer->position;
 
-  while (lexer->position != 0 && lexer->content[lexer->position] != ' ' &&
-         !is_escape_seq(lexer->content[lexer->position])) {
+  while (lexer->position != 0 && lexer->position >= lexer->next_start_position) {
     lexer->position = lexer->position - 1;
   }
 
@@ -909,10 +897,8 @@ LEXDEF Token lexer_error(Lexer *lexer) {
 
   size_t k = 0;
   while (lexer_check_boundery(lexer)) {
-    if (lexer_char_is(lexer, ' ') ||
-        is_escape_seq(lexer->content[lexer->position])) {
+    if (lexer_is_escape_seq_or_space(lexer))
       break;
-    }
     lexer_chop_char(lexer, 1);
     k++;
   }
