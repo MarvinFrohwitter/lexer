@@ -365,8 +365,6 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
               // lexer->position = punct_pos;
               Token token = {0};
               if (lexer_punctuator_set_token(lexer, &token, punct_length))
-                // @Speed This is slower in log performance test
-                // if (lexer_is_punctuator(lexer, punct_length, 0))
                 continue;
               else {
                 goto errortoken;
@@ -478,15 +476,6 @@ postfixcheck: {
       i = maxiter;
       break;
     }
-      // case '/':
-      //   if (lexer_check_boundery_next(lexer) && lexer_next_char_is(lexer,
-      //   '/')) {
-      //     i = maxiter;
-      //   } else {
-      //     goto errortoken;
-      //   }
-      //   break;
-
     default:
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
@@ -494,8 +483,6 @@ postfixcheck: {
         i = maxiter;
         break;
       } else {
-        fprintf(stderr, "postfixcheck faild with:%c at %llu\n",
-                lexer->content[lexer->position], lexer->position);
         goto errortoken;
       }
     }
@@ -831,7 +818,9 @@ LEXDEF Token lexer_eof_token(Lexer *lexer) {
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   size_t current_lexer_posion = lexer->position;
 
-  while (lexer->position != 0 && lexer->position >= lexer->next_start_position) {
+  while (lexer->position >= 0 &&
+         lexer->position >= lexer->next_start_position &&
+         !lexer_is_escape_seq_or_space(lexer)) {
     lexer->position = lexer->position - 1;
   }
 

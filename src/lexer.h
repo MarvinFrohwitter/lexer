@@ -16,8 +16,6 @@ typedef struct Lexer {
   unsigned long long int content_length;
   unsigned long long int position;
   unsigned long long int next_start_position;
-  // size_t content_length;
-  // size_t position;
 
 } Lexer;
 
