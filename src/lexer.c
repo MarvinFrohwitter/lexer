@@ -766,6 +766,8 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     token.size = lexer->position;
     if (lexer_is_punctuator(lexer, 1, 0)) {
 
+#ifndef LEXLOOKAHEAD
+
       int lookahead = lexer_check_punctuator_lookahead(lexer);
       if (lookahead < 1) {
         token.size = 1;
@@ -781,7 +783,11 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
         lexer_punctuator_set_token(lexer, &token, token.size);
         lexer_chop_char(lexer, token.size);
       }
-
+#else
+      token.size = 1;
+      lexer_punctuator_set_token(lexer, &token, token.size);
+      lexer_chop_char(lexer, 1);
+#endif /* LEXLOOKAHEAD */
 #ifndef EXLEX_IMPLEMENTATION
       token.kind = PUNCTUATOR;
 #endif /* EXLEX_IMPLEMENTATION */
