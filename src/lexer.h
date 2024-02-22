@@ -74,9 +74,9 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\v', '\f', '\\'};
     PUNCT_POINT = '.',     // 56
     PUNCT_COLON = ':',     // 58
     PUNCT_SEMICOLON = ';', // 59
-    PUNCT_LANGE = '<',     // 60
+    PUNCT_LANGLE = '<',     // 60
     PUNCT_ASSIGN = '=',    // 61
-    PUNCT_RANGE = '>',     // 62
+    PUNCT_RANGLE = '>',     // 62
     PUNCT_ASK = '?',       // 63
     PUNCT_LBRACKET = '[',  // 91
     PUNCT_RBRACKET = ']',  // 93

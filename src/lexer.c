@@ -812,8 +812,8 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 LEXDEF Token lexer_eof_token(Lexer *lexer) {
   Token token;
   token.kind = EOF_TOKEN;
-  token.size = lexer->content_length;
-  token.content = &lexer->content[lexer->content_length];
+  token.size = 0;
+  token.content = NULL;
   return token;
 }
 
@@ -1151,10 +1151,10 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
       token->kind = PUNCT_MOD;
       break;
     case '<':
-      token->kind = PUNCT_LANGE;
+      token->kind = PUNCT_LANGLE;
       break;
     case '>':
-      token->kind = PUNCT_RANGE;
+      token->kind = PUNCT_RANGLE;
       break;
     case ',':
       token->kind = PUNCT_COMMA;
