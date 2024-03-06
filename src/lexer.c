@@ -327,7 +327,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
 
       char c = lexer->content[lexer->position];
       if (lexer->content[lexer->position - 1] == '.' &&
-          (isalpha(c) || isspace(c) || lexer_is_punctuator(lexer, 1, 0)) &&
+          (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
           (!lexer_char_is(lexer, 'e') || !lexer_char_is(lexer, 'E'))) {
         goto punctuator;
       }
