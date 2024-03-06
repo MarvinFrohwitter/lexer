@@ -13,13 +13,14 @@ typedef struct FileSring {
 int main(int argc, char **argv) {
 
   char *programm = shift_args(&argc, &argv);
-  fprintf(stderr, "INFO: The %s is executing.\n", programm);
+  // fprintf(stderr, "INFO: The %s is executing.\n", programm);
 
 // #define INTERNAL 1
 #ifdef INTERNAL
 #include <string.h>
 
   char *content_to_parse = "G "
+                           "._HAUS,"
                            "uint32_t "
                            "int "
                            "while_t "
@@ -109,7 +110,7 @@ int main(int argc, char **argv) {
                            "234.;";
 
   size_t len = strlen(content_to_parse);
-  Lexer *lexer = lexer_new(content_to_parse, len, 0);
+  Lexer *lexer = lexer_new("INTERNAL", content_to_parse, len, 0);
 
 #else
   FileString fs = {0};
@@ -131,7 +132,7 @@ int main(int argc, char **argv) {
     // fprintf(stderr, "THE CHARS : [%c]\n", character);
   }
   fclose(fd);
-  Lexer *lexer = lexer_new(fs.items, fs.count, 0);
+  Lexer *lexer = lexer_new(filename, fs.items, fs.count, 0);
 #endif
 
   FileString output = {0};
@@ -139,7 +140,8 @@ int main(int argc, char **argv) {
   Token t = {0};
   size_t counter = 0;
   int error_count = 0;
-  while (t.kind != EOF_TOKEN && lexer->content_length >= lexer->position) {
+  while (t.kind != EOF_TOKEN) {
+
     t = lexer_next(lexer);
     counter++;
 
@@ -158,7 +160,6 @@ int main(int argc, char **argv) {
   }
   printf("There are %zu tokens\n", counter);
 
-
   if (error_count) {
     printf("There are %d errors\n", error_count);
 
@@ -168,6 +169,5 @@ int main(int argc, char **argv) {
 
   da_free(&output);
   lexer_del(lexer);
-
   return 0;
 }

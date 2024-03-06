@@ -20,6 +20,7 @@ options:
 lexer:
 	$(MAKE) -C ${HOME}/Entwicklung/c/lexer/src/
 	${CC} ${CFLAGS} ${INCLUDE} -o lexer-intermediate ${SRC} ${LIBARY} -llexer
+	# ${CC} -DLEXLOOKAHEAD -DEXLEX_IMPLEMENTATION ${CFLAGS} ${INCLUDE} -o $@ ${SRC} ${LIBS}
 	${CC} -DEXLEX_IMPLEMENTATION ${CFLAGS} ${INCLUDE} -o $@ ${SRC} ${LIBS}
 
 clean:

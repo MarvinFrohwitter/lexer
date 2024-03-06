@@ -14,7 +14,8 @@
 /* @param size The content length. */
 /* @param The position of the content the lexer should begin tokenise. */
 /* @return Lexer The function returns a new initilized lexer. */
-BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
+BASICLEXDEF Lexer *lexer_new(char *file_path, char *content, size_t size,
+                             size_t position) {
   Lexer *lexer = malloc(sizeof(Lexer));
   if (lexer == NULL) {
     fprintf(stderr,
@@ -26,6 +27,8 @@ BASICLEXDEF Lexer *lexer_new(char *content, size_t size, size_t position) {
   lexer->content = content;
   lexer->position = position;
   lexer->next_start_position = lexer->position;
+  lexer->file_name = file_path;
+  lexer->line_count = 1;
 
   return lexer;
 }
@@ -45,6 +48,9 @@ BASICLEXDEF void lexer_del(Lexer *lexer) {
 /* @return Token the Error token or the Invalid token. */
 LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
   for (size_t i = 0; i < count; i++) {
+    if (lexer->content[lexer->position] == '\n') {
+      lexer->line_count++;
+    }
     if (!lexer_check_boundery(lexer)) {
       return lexer_error(lexer);
     }
@@ -309,7 +315,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
     while (lexer_check_boundery(lexer) &&
            (isdigit(lexer->content[lexer->position]) ||
             lexer->content[lexer->position] == '.') &&
-           !is_escape_seq(lexer->content[lexer->position])) {
+           !is_escape_seq(lexer, lexer->content[lexer->position])) {
 
       if (is_floating &&
           (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
@@ -328,6 +334,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
       char c = lexer->content[lexer->position];
       if (lexer->content[lexer->position - 1] == '.' &&
           (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
+           lexer_is_punctuator(lexer, 1, 0)) &&
           (!lexer_char_is(lexer, 'e') || !lexer_char_is(lexer, 'E'))) {
         goto punctuator;
       }
@@ -445,7 +452,7 @@ postfixcheck: {
     default:
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
-           is_escape_seq(lexer->content[lexer->position]))) {
+           is_escape_seq(lexer, lexer->content[lexer->position]))) {
         goto compute_return;
         break;
       } else {
@@ -479,7 +486,7 @@ postfixcheck: {
     default:
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
-           is_escape_seq(lexer->content[lexer->position]))) {
+           is_escape_seq(lexer, lexer->content[lexer->position]))) {
         i = maxiter;
         break;
       } else {
@@ -550,8 +557,8 @@ LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 
   while (lexer_check_boundery(lexer)) {
     if (is_multi) {
-      if (lexer_char_is(lexer, '*') && lexer_check_boundery_next(lexer) &&
-          lexer_next_char_is(lexer, '/')) {
+      if (lexer_char_is(lexer, '*') && lexer_next_char_is(lexer, '/') &&
+          lexer_check_boundery_next(lexer)) {
         lexer_chop_char(lexer, 2);
         break;
       }
@@ -584,7 +591,7 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
     if (lexer_char_is(lexer, '"')) {
       lexer_chop_char(lexer, 1);
       break;
-    } else if (is_escape_seq(lexer->content[lexer->position])) {
+    } else if (is_escape_seq(lexer, lexer->content[lexer->position])) {
       {
         Token token = lexer_chop_char(lexer, 1);
         if (token.kind == ERROR) {
@@ -605,7 +612,7 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
 /* @return boolean True, if the current lexer postion is an escape char or a
  * space, otherwise false. */
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
-  return is_escape_seq(lexer->content[lexer->position]) ||
+  return is_escape_seq(lexer, lexer->content[lexer->position]) ||
          lexer_char_is(lexer, ' ');
 }
 
@@ -619,7 +626,7 @@ LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
 /* @return boolean True, if the given character is an escape char, otherwise
  */
 /* false. */
-LEXDEF int is_escape_seq(char c) {
+LEXDEF int is_escape_seq(Lexer *lexer, char c) {
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   for (size_t j = 0; j < length; j++) {
     if (c == ESCAPE[j]) {
@@ -941,6 +948,9 @@ handle:
           final_token);
   fprintf(stderr, "Faild at CHAR: [%c]\n", c);
   fprintf(stderr, "         POS:  [%zu]\n", current_lexer_posion);
+  fprintf(stderr, "         LINE: [%llu]\n", lexer->line_count);
+  fprintf(stderr, "--------------------------------------------------------\n");
+  fprintf(stderr, "The current file name: %s\n", lexer->file_name);
   fprintf(stderr, "--------------------------------------------------------\n");
   fprintf(stderr, "\n");
 
