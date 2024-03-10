@@ -8,4 +8,4 @@ for file in $files; do
 	./lexer "$file" 1>/dev/null
 
 done
-echo $counter
+echo "FILE COUNT: $counter"
