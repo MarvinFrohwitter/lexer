@@ -1,16 +1,19 @@
 CC = clang
 CFLAGS = -x c -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
+DEFINES = -DLEX_LOGERROR -DEXLEX_IMPLEMENTATION
 
 all: options lexer
 
 options:
-	@echo Lexer build options:
+	@echo "------------------------------------------------------------------"
+	@echo "Lexer build options:"
 	@echo "CFLAGS = ${CFLAGS}"
 	@echo "LIBS   = ${LIBS}"
 	@echo "CC     = ${CC}"
+	@echo "------------------------------------------------------------------"
 
 lexer:
-	${CC} ${CFLAGS} -c lexer.c
+	${CC} ${DEFINES} ${CFLAGS} -c lexer.c
 	ar -r liblexer.a lexer.o
 
 clean:

@@ -142,27 +142,6 @@ LEXDEF void lexer_trim_left(Lexer *lexer) {
   }
 }
 
-/* The function lexer_is_keyword() returns, if the lexer has found a keyword of
- */
-/* the given length at the current lexer content position. */
-/* @param lexer The given Lexer that contains the current state. */
-/* @param length The character length the keyword should have. */
-/* @return boolean True, if the content at the current position has a keyword,
- */
-/* otherwise false. */
-LEXDEF int lexer_is_keyword(Lexer *lexer, size_t length) {
-  size_t array_count = sizeof(KEYWORDS) / sizeof(KEYWORDS[0]) - 1;
-
-  for (size_t i = 0; i < array_count; i++) {
-    /* The position of the lexer is on the next char. */
-    if (strncmp(KEYWORDS[i], &lexer->content[lexer->position - length],
-                length) == 0) {
-      return 1;
-    }
-  }
-  return 0;
-}
-
 /* The function lexer_is_punctuator() returns, if the lexer has found a */
 /* punctuator of the given length at the current lexer content position. */
 /* @param lexer The given Lexer that contains the current state. */
@@ -333,7 +312,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
     while (lexer_check_boundery(lexer) &&
            (isdigit(lexer->content[lexer->position]) ||
             lexer->content[lexer->position] == '.') &&
-           !is_escape_seq(lexer, lexer->content[lexer->position])) {
+           !is_escape_seq(lexer->content[lexer->position])) {
 
       // if (is_floating &&
       //     (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
@@ -471,7 +450,7 @@ postfixcheck: {
     default:
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
-           is_escape_seq(lexer, lexer->content[lexer->position]))) {
+           is_escape_seq(lexer->content[lexer->position]))) {
         goto compute_return;
         break;
       } else {
@@ -505,7 +484,7 @@ postfixcheck: {
     default:
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, 1, ARRAY_LENGTH(PUNCTUATORS) - 2) ||
-           is_escape_seq(lexer, lexer->content[lexer->position]))) {
+           is_escape_seq(lexer->content[lexer->position]))) {
         i = maxiter;
         break;
       } else {
@@ -610,7 +589,7 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
     if (lexer_char_is(lexer, '"')) {
       lexer_chop_char(lexer, 1);
       break;
-    } else if (is_escape_seq(lexer, lexer->content[lexer->position])) {
+    } else if (is_escape_seq(lexer->content[lexer->position])) {
       {
         Token token = lexer_chop_char(lexer, 1);
         if (token.kind == ERROR) {
@@ -631,7 +610,7 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
 /* @return boolean True, if the current lexer postion is an escape char or a
  * space, otherwise false. */
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
-  return is_escape_seq(lexer, lexer->content[lexer->position]) ||
+  return is_escape_seq(lexer->content[lexer->position]) ||
          lexer_char_is(lexer, ' ');
 }
 
@@ -645,7 +624,7 @@ LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
 /* @return boolean True, if the given character is an escape char, otherwise
  */
 /* false. */
-LEXDEF int is_escape_seq(Lexer *lexer, char c) {
+LEXDEF int is_escape_seq(char c) {
   size_t length = sizeof(ESCAPE) / sizeof(ESCAPE[0]);
   for (size_t j = 0; j < length; j++) {
     if (c == ESCAPE[j]) {
@@ -689,7 +668,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
   lexer_trim_left(lexer);
   if (lexer->position > lexer->content_length) {
-    return lexer_eof_token(lexer);
+    return lexer_eof_token();
   }
 
   token.content = &lexer->content[lexer->position];
@@ -825,7 +804,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
   token.kind = INVALID;
   if (!lexer_check_boundery(lexer)) {
-    return lexer_eof_token(lexer);
+    return lexer_eof_token();
   } else {
     lexer_chop_char(lexer, 1);
   }
@@ -834,9 +813,8 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 }
 
 /* The  function creates the EOF_TOKEN */
-/* @param lexer The Lexer that will be modified. */
 /* @return token The token that will be modified and contains the EOF_TOKEN */
-LEXDEF Token lexer_eof_token(Lexer *lexer) {
+LEXDEF Token lexer_eof_token(void) {
   Token token;
   token.kind = EOF_TOKEN;
   token.size = 0;
@@ -879,13 +857,12 @@ LEXDEF Token lexer_error(Lexer *lexer) {
   int checkend = 0;
   char *pstring, *pstring_tail = 0, *final_token;
   size_t current_lexer_posion = lexer->position;
-  const char c = lexer->content[lexer->position];
 
   /* ------------------------------ EOF TOKEN ------------------------------
    */
 
   if (!lexer_check_boundery(lexer)) {
-    return lexer_eof_token(lexer);
+    return lexer_eof_token();
   }
 
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ----------------------
@@ -967,7 +944,7 @@ handle:
           pstring_tail);
   fprintf(stderr, "ERROR: The assumed final broken token:          [%s]\n",
           final_token);
-  fprintf(stderr, "Faild at CHAR: [%c]\n", c);
+  fprintf(stderr, "Faild at CHAR: [%c]\n", lexer->content[lexer->position]);
   fprintf(stderr, "         POS:  [%zu]\n", current_lexer_posion);
   fprintf(stderr, "         LINE: [%llu]\n", lexer->line_count);
   fprintf(stderr, "--------------------------------------------------------\n");

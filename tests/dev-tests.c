@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   //   return 1;
   // }
 
-  read_file(filename, &fs);
+  read_file(filename, (Content*)&fs);
 
   // int c;
   // int k = 0;

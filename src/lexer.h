@@ -206,7 +206,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer);
 /* ==========================================================================
  */
 
-LEXDEF Token lexer_eof_token(Lexer *lexer);
+LEXDEF Token lexer_eof_token(void);
 LEXDEF Token lexer_error(Lexer *lexer);
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token);
 LEXDEF Token lexer_invalid_token(Lexer *lexer);
@@ -221,7 +221,6 @@ LEXDEF void lexer_trim_left(Lexer *lexer);
 LEXDEF int lexer_next_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer);
-LEXDEF int lexer_is_keyword(Lexer *lexer, size_t length);
 LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
 LEXDEF int lexer_check_boundery(Lexer *lexer);
@@ -233,7 +232,7 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
 
 /* ==========================================================================
  */
-LEXDEF int is_escape_seq(Lexer *lexer, char c);
+LEXDEF int is_escape_seq(char c);
 LEXDEF int is_sybol_alnum_and_(char c);
 LEXDEF int is_sybol_alpha_and_(char c);
 /* ==========================================================================
