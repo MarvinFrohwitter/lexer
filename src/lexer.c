@@ -315,17 +315,37 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
     }
 
   } else {
+
+    {
+      Token token = lexer_chop_char(lexer, 1);
+      if (token.kind == ERROR)
+        goto errortoken;
+    }
+
+    char c = lexer->content[lexer->position];
+    if (lexer->content[lexer->position - 1] == '.' &&
+        (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
+         lexer_is_punctuator(lexer, 1, 0))) {
+      goto punctuator;
+    }
+    lexer->position = pos;
+
     while (lexer_check_boundery(lexer) &&
            (isdigit(lexer->content[lexer->position]) ||
             lexer->content[lexer->position] == '.') &&
            !is_escape_seq(lexer, lexer->content[lexer->position])) {
 
-      if (is_floating &&
-          (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
-        goto punctuator;
-      }
+      // if (is_floating &&
+      //     (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
+      //   goto punctuator;
+      // }
+
       if (lexer_char_is(lexer, '.')) {
         is_floating += 1;
+      }
+
+      if (is_floating > 1) {
+        goto errortoken;
       }
 
       {
@@ -334,76 +354,72 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
           goto errortoken;
       }
 
-      char c = lexer->content[lexer->position];
-      if (lexer->content[lexer->position - 1] == '.' &&
-          (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
-           lexer_is_punctuator(lexer, 1, 0)) &&
-          (!lexer_char_is(lexer, 'e') || !lexer_char_is(lexer, 'E'))) {
-        goto punctuator;
-      }
+      // if (lexer_char_is(lexer, '.')) {
+      //   is_floating += 1;
+      //   {
+      //     Token token = lexer_chop_char(lexer, 1);
+      //     if (token.kind == ERROR)
+      //       goto errortoken;
+      //   }
 
-      if (lexer_char_is(lexer, '.')) {
-        is_floating += 1;
-        {
-          Token token = lexer_chop_char(lexer, 1);
-          if (token.kind == ERROR)
-            goto errortoken;
-        }
+      //   // Just for ending floats with a '.' and after is a punctuator.
+      //   size_t punct_pos = lexer->position;
+      //   if (lexer->content[lexer->position - 1] == '.') {
 
-        // Just for ending floats with a '.' and after is a punctuator.
-        size_t punct_pos = lexer->position;
-        if (lexer->content[lexer->position - 1] == '.') {
+      //     if (!lexer_check_boundery_next(lexer)) {
+      //       continue;
+      //     }
 
-          if (!lexer_check_boundery_next(lexer)) {
-            continue;
-          }
+      //     // NOTE: THIS CODE IS MAYBE BAD BECAUSE THE ARE NO ERROR CHECKS
+      //     while (lexer_check_boundery(lexer) &&
+      //            !lexer_is_escape_seq_or_space(lexer)) {
+      //       Token token = lexer_chop_char(lexer, 1);
+      //       if (token.kind == ERROR)
+      //         break;
+      //     }
 
-          while (lexer_check_boundery(lexer) &&
-                 !lexer_is_escape_seq_or_space(lexer)) {
-            Token token = lexer_chop_char(lexer, 1);
-            if (token.kind == ERROR)
-              break;
-          }
+      //     if (!lexer_check_boundery(lexer)) {
+      //       if (punct_pos + 1 >= lexer->content_length) {
+      //         goto errortoken;
+      //       } else {
+      //         size_t punct_length = lexer->position - punct_pos;
+      //         assert(punct_length != 0);
+      //         assert(punct_length == 0);
+      //         // lexer->position = punct_pos;
+      //         Token token = {0};
+      //         if (lexer_punctuator_set_token(lexer, &token, punct_length))
+      //           continue;
+      //         else {
+      //           goto errortoken;
+      //         }
+      //       }
 
-          if (!lexer_check_boundery(lexer)) {
-            if (punct_pos + 1 >= lexer->content_length) {
-              goto errortoken;
-            } else {
-              size_t punct_length = lexer->position - punct_pos;
-              assert(punct_length != 0);
-              assert(punct_length == 0);
-              // lexer->position = punct_pos;
-              Token token = {0};
-              if (lexer_punctuator_set_token(lexer, &token, punct_length))
-                continue;
-              else {
-                goto errortoken;
-              }
-            }
+      //     } else {
+      //       lexer->position = punct_pos;
+      //       continue;
+      //     }
+      //   }
+      //   lexer->position = punct_pos;
 
-          } else {
-            lexer->position = punct_pos;
-            continue;
-          }
-        }
-        lexer->position = punct_pos;
+      //   if (lexer->content[lexer->position - 2] == '.' &&
+      //       lexer_char_is(lexer, '.')) {
+      //     goto punctuator;
 
-        if (lexer->content[lexer->position - 2] == '.' &&
-            lexer_char_is(lexer, '.')) {
-          goto punctuator;
-
-        } else if ((isdigit(lexer->content[lexer->position]) ||
-                    (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E'))) &&
-                   is_floating <= 1) {
-          continue;
-        } else if ((isdigit(lexer->content[lexer->position]) ||
-                    (lexer_char_is(lexer, 'f') || lexer_char_is(lexer, 'F') ||
-                     lexer_char_is(lexer, 'l') || lexer_char_is(lexer, 'L'))) &&
-                   is_floating <= 1) {
-          continue;
-        }
-        { goto errortoken; }
-      }
+      //   } else if ((isdigit(lexer->content[lexer->position]) ||
+      //               (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E')))
+      //               &&
+      //              is_floating <= 1) {
+      //     continue;
+      //   } else if ((isdigit(lexer->content[lexer->position]) ||
+      //               (lexer_char_is(lexer, 'f') || lexer_char_is(lexer, 'F')
+      //               ||
+      //                lexer_char_is(lexer, 'l') || lexer_char_is(lexer, 'L')))
+      //                &&
+      //              is_floating <= 1) {
+      //     continue;
+      //   }
+      //   { goto errortoken; }
+      // }
     }
 
     if (!lexer_check_boundery(lexer)) {
@@ -781,6 +797,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
       int lookahead = lexer_check_punctuator_lookahead(lexer);
       if (lookahead < 1) {
         token.size = 1;
+
       } else {
         token.size = lexer->position - token.size;
       }
@@ -959,6 +976,7 @@ handle:
   fprintf(stderr, "\n");
 
 #endif // LEX_LOGERROR
+
   /* Create the final Error Token to return. */
   Token token;
   token.kind = ERROR;
