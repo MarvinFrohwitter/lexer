@@ -201,6 +201,7 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
   }
   lexer_chop_char(lexer, 1);
   if (!lexer_check_boundery_next(lexer)) {
+    lexer->position -= 1;
     return -1;
   }
   lexer->position -= 1;
