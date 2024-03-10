@@ -1,6 +1,10 @@
 #define GUTILS_IMPLEMENTATION
 #include "gutils.h"
 
+// #define INTERNAL 1
+#ifdef INTERNAL
+#define EXLEX_IMPLEMENTATION
+#endif
 #include "lexer.h"
 #include <stdio.h>
 
@@ -15,7 +19,6 @@ int main(int argc, char **argv) {
   char *programm = shift_args(&argc, &argv);
   // fprintf(stderr, "INFO: The %s is executing.\n", programm);
 
-// #define INTERNAL 1
 #ifdef INTERNAL
 #include <string.h>
 
@@ -120,18 +123,24 @@ int main(int argc, char **argv) {
   }
   char *filename = shift_args(&argc, &argv);
   // char *filename = "/home/marvin/Entwicklung/c/lexer/src/lexer.c";
-  FILE *fd = fopen(filename, "rb");
-  if (!fd) {
-    perror("fopen");
-    return 1;
-  }
-  int c;
-  while ((c = fgetc(fd)) != EOF) {
-    char character = c;
-    da_append(&fs, character);
-    // fprintf(stderr, "THE CHARS : [%c]\n", character);
-  }
-  fclose(fd);
+  // FILE *fd = fopen(filename, "rb");
+  // if (!fd) {
+  //   perror("fopen");
+  //   return 1;
+  // }
+
+  read_file(filename, &fs);
+
+  // int c;
+  // int k = 0;
+  // while ((c = fgetc(fd)) != EOF && k < 10) {
+  //   k++;
+  //   char character = c;
+  //   da_append(&fs, character);
+  //   // fprintf(stderr, "THE CHARS : [%c]\n", character);
+  // }
+
+  // fclose(fd);
   Lexer *lexer = lexer_new(filename, fs.items, fs.count, 0);
 #endif
 
@@ -158,13 +167,13 @@ int main(int argc, char **argv) {
 
     output.count = 0;
   }
-  printf("There are %zu tokens\n", counter);
+  fprintf(stderr, "There are %zu tokens\n", counter);
 
   if (error_count) {
-    printf("There are %d errors\n", error_count);
+    fprintf(stderr, "There are %d errors\n", error_count);
 
   } else {
-    printf("Succses\n");
+    fprintf(stderr, "Success\n");
   }
 
   da_free(&output);
