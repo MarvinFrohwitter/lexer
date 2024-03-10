@@ -27,6 +27,10 @@
 #define BASICLEXDEF
 #endif // BASICLEXDEF
 
+#ifndef LEX_LOGERROR
+// #define LEX_LOGERROR
+#endif // LEX_LOGERROR
+
 #ifndef LEXDEF
 #define LEXDEF static inline
 #endif // LEXDEF

@@ -18,8 +18,10 @@ BASICLEXDEF Lexer *lexer_new(char *file_path, char *content, size_t size,
                              size_t position) {
   Lexer *lexer = malloc(sizeof(Lexer));
   if (lexer == NULL) {
+#ifdef LEX_LOGERROR
     fprintf(stderr,
             "ERROR: No more memory for the content to lex can be allocated.\n");
+#endif // LEX_LOGERROR
     return NULL;
   }
 
@@ -937,6 +939,7 @@ handle:
     strcat(final_token, pstring_tail);
   }
 
+#ifdef LEX_LOGERROR
   /* Print the Error Message. */
   fprintf(stderr, "\n");
   fprintf(stderr, "================= ERROR: Broken Token! =================\n");
@@ -954,6 +957,7 @@ handle:
   fprintf(stderr, "--------------------------------------------------------\n");
   fprintf(stderr, "\n");
 
+#endif // LEX_LOGERROR
   /* Create the final Error Token to return. */
   Token token;
   token.kind = ERROR;
