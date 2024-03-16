@@ -7,7 +7,7 @@ INCLUDE = -I "${HOME}/Entwicklung/c/lexer/src/" -I "${HOME}/Entwicklung/c/gutils
 LIBARY = -L "${HOME}/Entwicklung/c/lexer/src/"
 LIBS = ../src/lexer.c
 CFLAGS = -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
-CFLAGS += -static
+CFLAGS += -static -pg
 DEFINES = -DLEX_LOGERROR -DEXLEX_IMPLEMENTATION
 
 all: options lexer

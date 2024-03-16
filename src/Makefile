@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -x c -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
+CFLAGS = -x c -O3 -pedantic -Wall -Wextra -std=c11 -ggdb -pg
 DEFINES = -DLEX_LOGERROR -DEXLEX_IMPLEMENTATION
 
 all: options lexer
