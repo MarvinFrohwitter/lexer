@@ -13,7 +13,7 @@
 /* @param content The content that the lexer has to tokenise. */
 /* @param size The content length. */
 /* @param The position of the content the lexer should begin tokenise. */
-/* @return Lexer The function returns a new initilized lexer. */
+/* @return Lexer The function returns a new initialized lexer. */
 BASICLEXDEF Lexer *lexer_new(char *file_path, char *content, size_t size,
                              size_t position) {
   Lexer *lexer = malloc(sizeof(Lexer));
