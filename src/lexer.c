@@ -314,11 +314,6 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
             lexer->content[lexer->position] == '.') &&
            !is_escape_seq(lexer->content[lexer->position])) {
 
-      // if (is_floating &&
-      //     (lexer_char_is(lexer, ' ') || lexer_char_is(lexer, '.'))) {
-      //   goto punctuator;
-      // }
-
       if (lexer_char_is(lexer, '.')) {
         is_floating += 1;
       }
@@ -332,73 +327,6 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
         if (token.kind == ERROR)
           goto errortoken;
       }
-
-      // if (lexer_char_is(lexer, '.')) {
-      //   is_floating += 1;
-      //   {
-      //     Token token = lexer_chop_char(lexer, 1);
-      //     if (token.kind == ERROR)
-      //       goto errortoken;
-      //   }
-
-      //   // Just for ending floats with a '.' and after is a punctuator.
-      //   size_t punct_pos = lexer->position;
-      //   if (lexer->content[lexer->position - 1] == '.') {
-
-      //     if (!lexer_check_boundery_next(lexer)) {
-      //       continue;
-      //     }
-
-      //     // NOTE: THIS CODE IS MAYBE BAD BECAUSE THE ARE NO ERROR CHECKS
-      //     while (lexer_check_boundery(lexer) &&
-      //            !lexer_is_escape_seq_or_space(lexer)) {
-      //       Token token = lexer_chop_char(lexer, 1);
-      //       if (token.kind == ERROR)
-      //         break;
-      //     }
-
-      //     if (!lexer_check_boundery(lexer)) {
-      //       if (punct_pos + 1 >= lexer->content_length) {
-      //         goto errortoken;
-      //       } else {
-      //         size_t punct_length = lexer->position - punct_pos;
-      //         assert(punct_length != 0);
-      //         assert(punct_length == 0);
-      //         // lexer->position = punct_pos;
-      //         Token token = {0};
-      //         if (lexer_punctuator_set_token(lexer, &token, punct_length))
-      //           continue;
-      //         else {
-      //           goto errortoken;
-      //         }
-      //       }
-
-      //     } else {
-      //       lexer->position = punct_pos;
-      //       continue;
-      //     }
-      //   }
-      //   lexer->position = punct_pos;
-
-      //   if (lexer->content[lexer->position - 2] == '.' &&
-      //       lexer_char_is(lexer, '.')) {
-      //     goto punctuator;
-
-      //   } else if ((isdigit(lexer->content[lexer->position]) ||
-      //               (lexer_char_is(lexer, 'e') || lexer_char_is(lexer, 'E')))
-      //               &&
-      //              is_floating <= 1) {
-      //     continue;
-      //   } else if ((isdigit(lexer->content[lexer->position]) ||
-      //               (lexer_char_is(lexer, 'f') || lexer_char_is(lexer, 'F')
-      //               ||
-      //                lexer_char_is(lexer, 'l') || lexer_char_is(lexer, 'L')))
-      //                &&
-      //              is_floating <= 1) {
-      //     continue;
-      //   }
-      //   { goto errortoken; }
-      // }
     }
 
     if (!lexer_check_boundery(lexer)) {
