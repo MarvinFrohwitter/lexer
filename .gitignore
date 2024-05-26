@@ -7,3 +7,4 @@ liblexer.a
 test.txt
 *.log
 
+gmon.out
