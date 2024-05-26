@@ -9,7 +9,7 @@
 #include <stdio.h>
 
 typedef struct FileSring {
-  char *items;
+  char *elements;
   size_t count;
   size_t capacity;
 } FileString;
@@ -129,19 +129,19 @@ int main(int argc, char **argv) {
   //   return 1;
   // }
 
-  read_file(filename, (Content*)&fs);
+  read_file(filename, (Content *)&fs);
 
   // int c;
   // int k = 0;
   // while ((c = fgetc(fd)) != EOF && k < 10) {
   //   k++;
   //   char character = c;
-  //   da_append(&fs, character);
+  //   dap(&fs, character);
   //   // fprintf(stderr, "THE CHARS : [%c]\n", character);
   // }
 
   // fclose(fd);
-  Lexer *lexer = lexer_new(filename, fs.items, fs.count, 0);
+  Lexer *lexer = lexer_new(filename, fs.elements, fs.count, 0);
 #endif
 
   FileString output = {0};
@@ -154,10 +154,10 @@ int main(int argc, char **argv) {
     t = lexer_next(lexer);
     counter++;
 
-    da_append_many(&output, t.content, t.size);
-    da_append(&output, '\0');
+    dapc(&output, t.content, t.size);
+    dap(&output, '\0');
 
-    fprintf(stdout, "[%s] form type %u\n", output.items, t.kind);
+    fprintf(stdout, "[%s] form type %u\n", output.elements, t.kind);
     if (t.kind == ERROR) {
       error_count += 1;
     }
@@ -176,7 +176,7 @@ int main(int argc, char **argv) {
     fprintf(stderr, "Success\n");
   }
 
-  da_free(&output);
+  free(output.elements);
   lexer_del(lexer);
   return 0;
 }
