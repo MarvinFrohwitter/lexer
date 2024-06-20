@@ -4,7 +4,7 @@ SRC = dev-tests.c
 
 CC = clang
 INCLUDE = -I "${HOME}/Entwicklung/c/lexer/src/" -I "${HOME}/Entwicklung/c/gutils/"
-LIBARY = -L "${HOME}/Entwicklung/c/lexer/src/"
+LIBRARY = -L "${HOME}/Entwicklung/c/lexer/src/"
 LIBS = ../src/lexer.c
 CFLAGS = -O3 -pedantic -Wall -Wextra -std=c11 -ggdb
 CFLAGS += -static -pg
@@ -22,7 +22,7 @@ options:
 
 lexer:
 	$(MAKE) -C ${HOME}/Entwicklung/c/lexer/src/
-	${CC} ${DEFINES} ${CFLAGS} ${INCLUDE} -o lexer-intermediate ${SRC} ${LIBARY} -llexer
+	${CC} ${DEFINES} ${CFLAGS} ${INCLUDE} -o lexer-intermediate ${SRC} ${LIBRARY} -llexer
 	${CC} ${DEFINES} ${CFLAGS} ${INCLUDE} -o $@ ${SRC} ${LIBS}
 
 clean:
