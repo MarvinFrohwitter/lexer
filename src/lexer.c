@@ -167,12 +167,11 @@ LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max) {
   return 0;
 }
 
-/* The function lexer_check_punctuator_lookahead() computes, if the next */
-/* character can also be part of the punctuator. */
-/* @param lexer The given Lexer that contains the current state. */
-/* @return boolean True, if the next character is also part of the punctuator,
- */
-/* otherwise false. On error -1.*/
+/** The function lexer_check_punctuator_lookahead() computes, if the next
+ * character can also be part of the punctuator.
+ * @param lexer The given Lexer that contains the current state.
+ * @return boolean True, if the next character is also part of the punctuator,
+ * otherwise false. On error -1.*/
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
 
   if (!lexer_check_boundery_next(lexer)) {
@@ -185,71 +184,109 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
   }
   lexer->position -= 1;
 
-  if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<') &&
-      lexer->content[lexer->position + 2] == '=') {
-    lexer_chop_char(lexer, 3);
-  } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>') &&
-             lexer->content[lexer->position + 2] == '=') {
-    lexer_chop_char(lexer, 3);
-  } else if (lexer_char_is(lexer, '.') && lexer_next_char_is(lexer, '.') &&
-             lexer->content[lexer->position + 2] == '.') {
-    lexer_chop_char(lexer, 3);
-  } else if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '<') && lexer_next_char_is(lexer, '<')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '>') && lexer_next_char_is(lexer, '>')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '=') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '!') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '&') && lexer_next_char_is(lexer, '&')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '|') && lexer_next_char_is(lexer, '|')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '>')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '+') && lexer_next_char_is(lexer, '+')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '-')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '*') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '/') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '%') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '+') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '-') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '&') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '^') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '|') && lexer_next_char_is(lexer, '=')) {
-    lexer_chop_char(lexer, 2);
-  } else if (lexer_char_is(lexer, '#') && lexer_next_char_is(lexer, '#')) {
-    lexer_chop_char(lexer, 2);
-  } else {
+  switch (lexer->content[lexer->position]) {
+  case '<': {
+    if (lexer_next_char_is(lexer, '<') &&
+        lexer->content[lexer->position + 2] == '=') {
+      lexer_chop_char(lexer, 3);
+    }
+    if (lexer_next_char_is(lexer, '=') || lexer_next_char_is(lexer, '<')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '>': {
+    if (lexer_next_char_is(lexer, '>') &&
+        lexer->content[lexer->position + 2] == '=') {
+      lexer_chop_char(lexer, 3);
+    }
+    if (lexer_next_char_is(lexer, '=') || lexer_next_char_is(lexer, '>')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '.': {
+    if (lexer_next_char_is(lexer, '.') &&
+        lexer->content[lexer->position + 2] == '.') {
+      lexer_chop_char(lexer, 3);
+    }
+  } break;
+  case '=': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '!': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '&': {
+    if (lexer_next_char_is(lexer, '&') || lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '|': {
+    if (lexer_next_char_is(lexer, '|') || lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '-': {
+    if (lexer_next_char_is(lexer, '>') || lexer_next_char_is(lexer, '-') ||
+        lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '+': {
+    if (lexer_next_char_is(lexer, '+') || lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+
+  } break;
+  case '*': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '/': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '%': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '^': {
+    if (lexer_next_char_is(lexer, '=')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  case '#': {
+    if (lexer_next_char_is(lexer, '#')) {
+      lexer_chop_char(lexer, 2);
+    }
+  } break;
+  default:
     lexer_chop_char(lexer, 1);
     return 0;
   }
   return 1;
 }
 
-/* The function lexer_check_is_number() computes if the given part to 'lex' is a
- * number. It then computes the corresponding token or calls the lexer error
+/* The function lexer_check_is_number() computes if the given part to 'lex' is
+ * a number. It then computes the corresponding token or calls the lexer error
  * token handler method. */
 /* @param lexer The given Lexer that contains the current state. */
 /* @param token The token that will be modified and contains the final token
  * that can also contain the error token that is passed back up in the call
  * stack. */
-/* @return int The error code of the corresponding action result. It returns one
- * if the function computes a number in the token or 0 if the token could
+/* @return int The error code of the corresponding action result. It returns
+ * one if the function computes a number in the token or 0 if the token could
  * potentially be a punctuator. -1 if the token is the error token. */
 LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
   int is_floating = 0;
@@ -499,7 +536,7 @@ LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
   return 1;
 }
 
-/* The function lexer_check_is_str() computes the possible sting token */
+/* The function lexer_check_is_str() computes the possible string token */
 /* @param lexer The given Lexer that contains the current state. */
 /* @param token The token that will be modified and contains the final token
  * that is passed up in the call stack. */
@@ -535,14 +572,15 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
 /* The function ilexer_is_escape_seq_or_space() returns, if the given char is
  * equal to an escape character or a space. */
 /* @param lexer The given Lexer that contains the current state. */
-/* @return boolean True, if the current lexer postion is an escape char or a
+/* @return boolean True, if the current lexer position is an escape char or a
  * space, otherwise false. */
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer) {
   return is_escape_seq(lexer->content[lexer->position]) ||
          lexer_char_is(lexer, ' ');
 }
 
-/* ========================================================================= */
+/* =========================================================================
+ */
 
 /* The function is_escape_seq() returns, if the given char is equal to an
  * escape
@@ -773,8 +811,7 @@ LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   token->kind = ERROR;
 }
 
-/* The function lexer_error() handels the cases if a default token should be
- */
+/* The function lexer_error() handles the cases if a default token should be */
 /* returned or an explicit error has to be handelt. As well as print */
 /* the corresponding error message to standard error */
 /* @param lexer The Lexer that will be modified. */
@@ -872,7 +909,7 @@ handle:
           pstring_tail);
   fprintf(stderr, "ERROR: The assumed final broken token:          [%s]\n",
           final_token);
-  fprintf(stderr, "Faild at CHAR: [%c]\n", lexer->content[lexer->position]);
+  fprintf(stderr, "Failed at CHAR: [%c]\n", lexer->content[lexer->position]);
   fprintf(stderr, "         POS:  [%zu]\n", current_lexer_posion);
   fprintf(stderr, "         LINE: [%llu]\n", lexer->line_count);
   fprintf(stderr, "--------------------------------------------------------\n");
