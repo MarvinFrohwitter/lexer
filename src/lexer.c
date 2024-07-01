@@ -189,9 +189,11 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
     if (lexer_next_char_is(lexer, '<') &&
         lexer->content[lexer->position + 2] == '=') {
       lexer_chop_char(lexer, 3);
+      return 1;
     }
     if (lexer_next_char_is(lexer, '=') || lexer_next_char_is(lexer, '<')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
@@ -199,9 +201,11 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
     if (lexer_next_char_is(lexer, '>') &&
         lexer->content[lexer->position + 2] == '=') {
       lexer_chop_char(lexer, 3);
+      return 1;
     }
     if (lexer_next_char_is(lexer, '=') || lexer_next_char_is(lexer, '>')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
@@ -209,27 +213,32 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
     if (lexer_next_char_is(lexer, '.') &&
         lexer->content[lexer->position + 2] == '.') {
       lexer_chop_char(lexer, 3);
+      return 1;
     }
   } break;
   case '=': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '!': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '&': {
     if (lexer_next_char_is(lexer, '&') || lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
   case '|': {
     if (lexer_next_char_is(lexer, '|') || lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
@@ -237,45 +246,53 @@ LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer) {
     if (lexer_next_char_is(lexer, '>') || lexer_next_char_is(lexer, '-') ||
         lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
   case '+': {
     if (lexer_next_char_is(lexer, '+') || lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
 
   } break;
   case '*': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '/': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '%': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '^': {
     if (lexer_next_char_is(lexer, '=')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   case '#': {
     if (lexer_next_char_is(lexer, '#')) {
       lexer_chop_char(lexer, 2);
+      return 1;
     }
   } break;
   default:
     lexer_chop_char(lexer, 1);
     return 0;
   }
-  return 1;
+  lexer_chop_char(lexer, 1);
+  return 0;
 }
 
 /* The function lexer_check_is_number() computes if the given part to 'lex' is
