@@ -812,8 +812,7 @@ LEXDEF Token lexer_eof_token(void) {
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   size_t current_lexer_posion = lexer->position;
 
-  while (lexer->position > 0 &&
-         lexer->position >= lexer->next_start_position &&
+  while (lexer->position > 0 && lexer->position >= lexer->next_start_position &&
          !lexer_is_escape_seq_or_space(lexer)) {
     lexer->position = lexer->position - 1;
   }
