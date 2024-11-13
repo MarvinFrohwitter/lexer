@@ -154,10 +154,11 @@ int main(int argc, char **argv) {
     t = lexer_next(lexer);
     counter++;
 
-    dapc(&output, t.content, t.size);
-    dap(&output, '\0');
+    // dapc(&output, t.content, t.size);
+    // dap(&output, '\0');
+    // fprintf(stdout, "[%s] form type %u\n", output.elements, t.kind);
+    // output.count = 0;
 
-    fprintf(stdout, "[%s] form type %u\n", output.elements, t.kind);
     if (t.kind == ERROR) {
       error_count += 1;
     }
@@ -165,7 +166,6 @@ int main(int argc, char **argv) {
       break;
     }
 
-    output.count = 0;
   }
   fprintf(stderr, "There are %zu tokens\n", counter);
 
