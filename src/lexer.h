@@ -291,7 +291,7 @@ LEXDEF void lexer_trim_left(Lexer *lexer);
 LEXDEF int lexer_next_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer);
-LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t length, size_t max);
+LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t max);
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
 LEXDEF int lexer_check_boundery(Lexer *lexer);
 LEXDEF int lexer_check_boundery_next(Lexer *lexer);
