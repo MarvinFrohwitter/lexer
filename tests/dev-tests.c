@@ -129,7 +129,7 @@ int main(int argc, char **argv) {
   //   return 1;
   // }
 
-  read_file(filename, (Content *)&fs);
+  gutils_read_file(filename, (Content *)&fs);
 
   // int c;
   // int k = 0;
