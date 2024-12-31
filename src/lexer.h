@@ -58,12 +58,12 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\v', '\f', '\\'};
 
 /* The variable PUNCTUATORS is an array of single tokens of type PUNCTUATOR. */
 /* It contains the tokens to match on. */
-static const char *PUNCTUATORS[] = {
+static const char PUNCTUATORS[] = {
     // NOTE: It is important that the '.' is at the end of the array! It is
     // checked by the number function for floating point calculations.
     // And by the lexer_is_punctuator() function.
-    ",",  "]", ")", "=", ";", "{", "}", "&", "*", "+", "-", "~", "|", "/",
-    "\\", "%", "<", ">", "^", "|", "?", ":", "(", "[", "!", "'", ".", NULL};
+    ',',  ']', ')', '=', ';', '{', '}', '&', '*', '+', '-', '~',  '|', '/',
+    '\\', '%', '<', '>', '^', '|', '?', ':', '(', '[', '!', '\'', '.'};
 
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
