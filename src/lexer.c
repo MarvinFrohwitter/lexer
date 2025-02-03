@@ -14,7 +14,7 @@
 /* @param size The content length. */
 /* @param The position of the content the lexer should begin tokenise. */
 /* @return Lexer The function returns a new initialized lexer. */
-BASICLEXDEF Lexer *lexer_new(char *file_path, char *content, size_t size,
+BASICLEXDEF Lexer *lexer_new(const char *file_path, char *content, size_t size,
                              size_t position) {
   Lexer *lexer = calloc(1, sizeof(Lexer));
   if (lexer == NULL) {
