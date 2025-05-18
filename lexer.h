@@ -1049,6 +1049,21 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     token.kind = INVALID;
   }
 
+#ifdef LEX_NUMBER_SIGN
+  if ((lexer_char_is(lexer, '-') || lexer_char_is(lexer, '+'))) {
+    lexer_chop_char(lexer, 1);
+
+    if (isdigit(lexer->content[lexer->position]) || lexer_char_is(lexer, '.')) {
+      if (lexer_check_is_number(lexer, &token)) {
+        token.size++;
+        return token;
+      }
+      token.kind = INVALID;
+    }
+    lexer->position--;
+  }
+#endif // LEX_NUMBER_SIGN
+
   // Check for keywords
   if (isalpha(lexer->content[lexer->position])) {
 
