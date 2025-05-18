@@ -1100,7 +1100,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     token.size = lexer->position;
     if (lexer_is_punctuator(lexer, 0)) {
 
-#ifndef LEXLOOKAHEAD
+#ifdef LEXLOOKAHEAD
 
       int lookahead = lexer_check_punctuator_lookahead(lexer);
       if (lookahead < 1) {
