@@ -67,7 +67,8 @@ static const char PUNCTUATORS[] = {
 
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
-  INVALID = 0,
+  INVALID = -1,
+  NULL_TERMINATOR = 0,
   ERROR = 1,
   NUMBER = 2,
   KEYWORD = 3,

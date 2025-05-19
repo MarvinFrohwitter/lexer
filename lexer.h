@@ -77,7 +77,8 @@ static const char PUNCTUATORS[] = {
 
 /* The Token Kind that can be detected by the lexer. */
 typedef enum Kind {
-  INVALID = 0,
+  INVALID = -1,
+  NULL_TERMINATOR = 0,
   ERROR = 1,
   NUMBER = 2,
   KEYWORD = 3,
@@ -382,7 +383,12 @@ BASICLEXDEF void lexer_del(Lexer *lexer) {
  */
 const char *lexer_token_to_cstr(Lexer *lexer, Token *token) {
   lexer->buffer.count = 0;
-  lexer_dapc(&lexer->buffer, token->content, token->size);
+  if (token->kind == NULL_TERMINATOR) {
+    lexer_dapc(&lexer->buffer, "\\0", 2);
+
+  } else {
+    lexer_dapc(&lexer->buffer, token->content, token->size);
+  }
   lexer_dap(&lexer->buffer, 0);
   return lexer->buffer.elements;
 }
@@ -1001,6 +1007,15 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
   }
 
   token.content = &lexer->content[lexer->position];
+
+  // Check for null terminator
+  if (lexer_char_is(lexer, '\0')) {
+    lexer_chop_char(lexer, 1);
+    token.kind = NULL_TERMINATOR;
+    token.size = 1;
+    return token;
+  }
+
   // Check for preprocessing
   if (lexer_char_is(lexer, '#')) {
     token.kind = PREPROCESSING;
