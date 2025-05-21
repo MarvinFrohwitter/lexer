@@ -406,7 +406,7 @@ LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
     return lexer_invalid_token(lexer);
   }
   for (size_t i = 0; i < count; i++) {
-    if (lexer->content[lexer->position] == '\n' && !lexer->isstrlit) {
+    if (lexer->content[lexer->position] == '\n') {
       lexer->line_count++;
     }
     if (!lexer_check_boundery(lexer)) {
