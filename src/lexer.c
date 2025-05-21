@@ -31,6 +31,7 @@ BASICLEXDEF Lexer *lexer_new(const char *file_path, char *content, size_t size,
   lexer->next_start_position = lexer->position;
   lexer->file_name = file_path;
   lexer->line_count = 1;
+  lexer->isstrlit = 0;
 
   return lexer;
 }
@@ -78,7 +79,7 @@ LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
     return lexer_invalid_token(lexer);
   }
   for (size_t i = 0; i < count; i++) {
-    if (lexer->content[lexer->position] == '\n') {
+    if (lexer->content[lexer->position] == '\n' && !lexer->isstrlit) {
       lexer->line_count++;
     }
     if (!lexer_check_boundery(lexer)) {
@@ -585,27 +586,31 @@ LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
 LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
+  token->kind = STRINGLITERAL;
+  lexer->isstrlit = 1;
+  size_t position = lexer->position;
+  lexer_chop_char(lexer, 1);
 
   if (!lexer_check_boundery_next(lexer)) {
     return 0;
   }
 
-  token->kind = STRINGLITERAL;
-  size_t position = lexer->position;
-  lexer_chop_char(lexer, 1);
   while (lexer_check_boundery(lexer)) {
-    if (lexer_char_is(lexer, '"')) {
+    if (lexer_char_is(lexer, '"') &&
+        lexer->content[lexer->position - 1] != '\\') {
       lexer_chop_char(lexer, 1);
       break;
     } else if (is_escape_seq(lexer->content[lexer->position])) {
-      {
-        Token token = lexer_chop_char(lexer, 1);
-        if (token.kind == ERROR) {
-          return 0;
-        }
+      Token token = lexer_chop_char(lexer, 1);
+      if (token.kind == ERROR) {
+        return 0;
       }
     } else {
       lexer_chop_char(lexer, 1);
+      // This is for EOF errors where the string literal is not closed.
+      if (!lexer_check_boundery(lexer)) {
+        return 0;
+      }
     }
   }
   token->size = lexer->position - position;
@@ -671,6 +676,7 @@ LEXDEF int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
 BASICLEXDEF Token lexer_next(Lexer *lexer) {
+  lexer->isstrlit = 0;
   lexer->next_start_position = lexer->position;
   Token token = {0};
   token.kind = INVALID;
@@ -860,20 +866,15 @@ LEXDEF Token lexer_eof_token(void) {
 /* @param lexer The Lexer that will be modified. */
 /* @param token The token that will be modified and contains the final token*/
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
-  size_t current_lexer_posion = lexer->position;
-
-  while (lexer->position > 0 && lexer->position >= lexer->next_start_position &&
-         !lexer_is_escape_seq_or_space(lexer)) {
-    lexer->position = lexer->position - 1;
-  }
-
   if (lexer->position == 0) {
-    token->size = current_lexer_posion - lexer->position + 1;
+    token->size = 1;
   } else {
-    token->size = current_lexer_posion - lexer->position;
-    lexer->position = lexer->position + 1;
+    token->size = lexer->position - lexer->next_start_position;
   }
-  token->content = &lexer->content[lexer->position];
+
+  lexer->position = lexer->next_start_position;
+  token->content = &lexer->content[lexer->next_start_position];
+
   token->kind = ERROR;
 }
 
@@ -888,13 +889,6 @@ LEXDEF Token lexer_error(Lexer *lexer) {
   int checkend = 0;
   char *pstring, *pstring_tail = 0, *final_token;
   size_t current_lexer_posion = lexer->position;
-
-  /* ------------------------------ EOF TOKEN ------------------------------
-   */
-
-  if (!lexer_check_boundery(lexer)) {
-    return lexer_eof_token();
-  }
 
   /* ------------------ IF POSSIBLE DETECT THE TOKEN. ----------------------
    */

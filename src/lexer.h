@@ -47,6 +47,7 @@ typedef struct Lexer {
   unsigned long long int position;
   unsigned long long int next_start_position;
 
+  int isstrlit;
   unsigned long long int line_count;
   const char *file_name;
 
