@@ -587,7 +587,7 @@ LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
 /* @return boolean 1, if the function check is passed, otherwise 0. */
 LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
   if (lexer->position > 0) {
-    if ((long long int)lexer->position - 2 < 0) {
+    if ((long long int)lexer->position - 1 < 0) {
       lexer_chop_char(lexer, 1);
       // This ensures that the escape double quotes is in the boundary.
       return 0;
