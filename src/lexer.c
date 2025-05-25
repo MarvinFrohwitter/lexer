@@ -606,13 +606,21 @@ LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
   size_t position = lexer->position;
   lexer_chop_char(lexer, 1);
 
-  if (!lexer_check_boundery_next(lexer)) {
+  if (!lexer_check_boundery(lexer)) {
     return 0;
   }
 
   while (lexer_check_boundery(lexer)) {
-    if (lexer_char_is(lexer, '"') &&
-        lexer->content[lexer->position - 1] != '\\') {
+    if (lexer_char_is(lexer, '"')) {
+
+      if ((long long int)lexer->position - 2 >= 0) {
+        if (lexer->content[lexer->position - 1] == '\\' &&
+            lexer->content[lexer->position - 2] != '\\') {
+          lexer_chop_char(lexer, 1);
+          continue;
+        }
+      }
+
       lexer_chop_char(lexer, 1);
       break;
     } else if (is_escape_seq(lexer->content[lexer->position])) {
