@@ -92,6 +92,7 @@ typedef enum Kind {
   EOF_TOKEN = 10,
 
   PUNCT_SINGLEQUOTE = 39, // "'"
+  PUNCT_DOUBLEQUOTE = 34, // '"'
   PUNCT_BACKSLASH = '\\', // 92
 
   // ALL PUNCTUATORS
@@ -913,6 +914,21 @@ LEXDEF int lexer_check_is_comment(Lexer *lexer, Token *token, int is_multi) {
  * that is passed up in the call stack. */
 /* @return boolean 1, if the function check is passed, otherwise 0. */
 LEXDEF int lexer_check_is_str(Lexer *lexer, Token *token) {
+  if (lexer->position > 0) {
+    if ((long long int)lexer->position - 2 < 0) {
+      lexer_chop_char(lexer, 1);
+      // This ensures that the escape double quotes is in the boundary.
+      return 0;
+    }
+    if (lexer->content[lexer->position - 1] == '\\' ||
+        lexer->content[lexer->position - 1] == '\'') {
+      lexer_chop_char(lexer, 1);
+      token->kind = PUNCT_DOUBLEQUOTE;
+      token->size = 1;
+      return 1;
+    }
+  }
+
   token->kind = STRINGLITERAL;
   lexer->isstrlit = 1;
   size_t position = lexer->position;

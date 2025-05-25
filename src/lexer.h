@@ -82,6 +82,7 @@ typedef enum Kind {
   EOF_TOKEN = 10,
 
   PUNCT_SINGLEQUOTE = 39, // "'"
+  PUNCT_DOUBLEQUOTE = 34, // '"'
   PUNCT_BACKSLASH = '\\', // 92
 
   // ALL PUNCTUATORS
