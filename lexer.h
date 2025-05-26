@@ -690,12 +690,57 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
 
     if (!lexer_check_boundery(lexer) ||
         !isxdigit(lexer->content[lexer->position])) {
-      goto errortoken;
+      if (!lexer_char_is(lexer, '.')) {
+        goto errortoken;
+      }
     }
 
-    while (isxdigit(lexer->content[lexer->position]) &&
-           lexer_check_boundery(lexer)) {
-      lexer_chop_char(lexer, 1);
+    int is_exponent = 0;
+    while (lexer_check_boundery(lexer)) {
+      if (isxdigit(lexer->content[lexer->position])) {
+        if (is_exponent && !isdigit(lexer->content[lexer->position])) {
+          if (lexer_char_is(lexer, 'f') || lexer_char_is(lexer, 'F')) {
+            break;
+          }
+          goto errortoken;
+        }
+      } else if (lexer->content[lexer->position] == '.') {
+        is_floating += 1;
+        if (is_floating > 1 || is_exponent) {
+          goto errortoken;
+        }
+      } else if (lexer->content[lexer->position] == 'p' ||
+                 lexer->content[lexer->position] == 'P') {
+        is_exponent += 1;
+        if (is_exponent != 1) {
+          goto errortoken;
+        }
+        if (!isxdigit(lexer->content[lexer->position - 1])) {
+          goto errortoken;
+        }
+      } else if (lexer->content[lexer->position] == '-' ||
+                 lexer->content[lexer->position] == '+') {
+        if (!(lexer->content[lexer->position - 1] == 'p' ||
+              lexer->content[lexer->position - 1] == 'P')) {
+          goto compute_return;
+        }
+      } else {
+        break;
+      }
+
+      {
+        Token token = lexer_chop_char(lexer, 1);
+        if (token.kind == ERROR)
+          goto errortoken;
+      }
+    }
+
+    if (is_exponent) {
+      // This is just for the case where the exponent is defined but not
+      // a dot before, but a suffix can still happen, so that the
+      // postfixcheck will compute the suffix, just set it to floating.
+      is_floating += 1;
+      goto postfixcheck;
     }
 
     if (!lexer_check_boundery(lexer)) {
@@ -790,6 +835,8 @@ postfixcheck: {
            is_escape_seq(lexer->content[lexer->position]))) {
         goto compute_return;
         break;
+      } else if (!lexer_check_boundery(lexer)) {
+        break;
       } else {
         goto errortoken;
       }
@@ -822,6 +869,9 @@ postfixcheck: {
       if (lexer_check_boundery(lexer) &&
           (lexer_is_punctuator(lexer, ARRAY_LENGTH(PUNCTUATORS) - 1) ||
            is_escape_seq(lexer->content[lexer->position]))) {
+        i = maxiter;
+        break;
+      } else if (!lexer_check_boundery(lexer)) {
         i = maxiter;
         break;
       } else {
@@ -1220,7 +1270,7 @@ LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   if (lexer->position == 0) {
     token->size = 1;
   } else {
-    token->size = lexer->position - lexer->next_start_position;
+    token->size = lexer->position - lexer->next_start_position + 1;
   }
 
   lexer->position = lexer->next_start_position;
@@ -1320,7 +1370,8 @@ handle:
           pstring_tail);
   fprintf(stderr, "ERROR: The assumed final broken token:          [%s]\n",
           final_token);
-  fprintf(stderr, "Failed at CHAR: [%c]\n", lexer->content[lexer->position]);
+  fprintf(stderr, "Failed at CHAR: [%c]\n",
+          lexer->content[current_lexer_posion]);
   fprintf(stderr, "          POS:  [%zu]\n", current_lexer_posion);
   fprintf(stderr, "          LINE: [%llu]\n", lexer->line_count);
   fprintf(stderr, "--------------------------------------------------------\n");
