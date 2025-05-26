@@ -31,7 +31,7 @@
 // #define LEX_LOGERROR
 #endif // LEX_LOGERROR
 
-#ifdef LEXER_IMPLEMENTAION
+#ifdef LEXER_IMPLEMENTATION
 
 #ifndef LEXDEF
 #define LEXDEF static inline
@@ -43,7 +43,7 @@
 #define LEXDEF
 #endif // LEXDEF
 
-#endif // LEXER_IMPLEMENTAION
+#endif // LEXER_IMPLEMENTATION
 
 typedef struct {
   char *elements;
@@ -326,7 +326,7 @@ LEXDEF int is_sybol_alpha_and_(char c);
 
 #endif // LEXER_H_
 
-#ifdef LEXER_IMPLEMENTAION
+#ifdef LEXER_IMPLEMENTATION
 
 #include <assert.h>
 #include <ctype.h>
@@ -1671,4 +1671,4 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
   return 1;
 }
 
-#endif // LEXER_IMPLEMENTAION
+#endif // LEXER_IMPLEMENTATION
