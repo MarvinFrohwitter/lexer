@@ -2,7 +2,7 @@
 #define PRINT_OPERATION_AND_DESCRIPTION
 #include "cassert.h"
 
-#define LEXER_IMPLEMENTAION
+#define LEXER_IMPLEMENTATION
 #define EXLEX_IMPLEMENTATION
 #define LEXLOOKAHEAD
 #define LEX_NUMBER_SIGN
@@ -33,8 +33,56 @@ Test cassert_lexer_new() {
   cassert_size_t_eq(base_lexer.content_length, lexer->content_length);
   cassert_size_t_eq(base_lexer.position, lexer->position);
 
-  cassert_bool_neq((bool)lexer_check_boundery(lexer), 0);
-  cassert_bool_eq((bool)lexer_check_boundery(lexer), 1);
+  cassert_bool_neq((bool)lexer_check_boundary(lexer), 0);
+  cassert_bool_eq((bool)lexer_check_boundary(lexer), 1);
+
+  return test;
+}
+
+Test lexer_line_and_column() {
+  Test test = cassert_init_test("lexer_line_and_column");
+
+  char *content = "0 1\n2 3";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+  while (lexer_next(lexer).kind != EOF_TOKEN) {
+  }
+
+  cassert_int_eq(lexer->line_count, 2);
+  cassert_int_eq(lexer->column_count, 3);
+  cassert_ptr_eq(lexer->line_start, &content[4]);
+
+  return test;
+}
+
+Test lexer_line_and_column_empty_content() {
+  Test test = cassert_init_test("lexer_line_and_column");
+
+  char *content = "";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+  while (lexer_next(lexer).kind != EOF_TOKEN) {
+  }
+
+  cassert_int_eq(lexer->line_count, 0);
+  cassert_int_eq(lexer->column_count, 0);
+  cassert_ptr_eq(lexer->line_start, content);
+
+  return test;
+}
+
+Test lexer_line_and_column_NULL_content() {
+  Test test = cassert_init_test("lexer_line_and_column_NULL_content");
+
+  Lexer *lexer = lexer_new(__FILE__, NULL, -1, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  cassert_int_eq(lexer->line_count, 0);
+  cassert_int_eq(lexer->column_count, 0);
+  cassert_ptr_eq(lexer->line_start, NULL);
 
   return test;
 }
@@ -179,15 +227,11 @@ Test lexer_wrong_suffix_floating_point_numbers() {
   Token t = lexer_next(lexer);
   while (t.kind != EOF_TOKEN) {
     cassert_int_eq(t.kind, NUMBER);
-    cassert_set_last_cassert_description(
-        &test, strdup(tmp_sprintf("token content: `%s`",
-                                  lexer_token_to_cstr(lexer, &t))));
+    add_description(&test, lexer, &t);
 
     t = lexer_next(lexer);
     cassert_int_eq(t.kind, IDENTIFIER);
-    cassert_set_last_cassert_description(
-        &test, strdup(tmp_sprintf("token content: `%s`",
-                                  lexer_token_to_cstr(lexer, &t))));
+    add_description(&test, lexer, &t);
 
     t = lexer_next(lexer);
   }
@@ -195,8 +239,145 @@ Test lexer_wrong_suffix_floating_point_numbers() {
   return test;
 }
 
-void lexer_basic(Tests *tests) {
-  cassert_dap(tests, cassert_lexer_new());
+Test lexer_hex_floating_point_number_error() {
+  Test test = cassert_init_test("lexer_hex_floating_point_number_error");
+
+  char *content = "0xf.p1L";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ERROR);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_hex_floating_point_numbers() {
+  Test test = cassert_init_test("lexer_hex_floating_point_numbers");
+
+  char *content = "0x0f21L,"
+                  "0x0f.2p1L,"
+                  "0x1p1F,"
+                  "0x0f.2p1F,"
+                  "0x1p1F,"
+                  "0x0f.2p001L,"
+                  "0x0f.2p1L,";
+
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  while (t.kind != EOF_TOKEN) {
+    cassert_int_eq(t.kind, NUMBER);
+    add_description(&test, lexer, &t);
+
+    t = lexer_next(lexer);
+    cassert_int_eq(t.kind, PUNCT_COMMA);
+    add_description(&test, lexer, &t);
+
+    t = lexer_next(lexer);
+  }
+
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_hex_floating_point_numbers_arithmetic() {
+  Test test = cassert_init_test("lexer_hex_floating_point_numbers_arithmetic");
+
+  char *content = "0x0p-1-2";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NUMBER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NUMBER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_hex_floating_point_numbers_no_suffix() {
+  Test test = cassert_init_test("lexer_hex_floating_point_numbers_no_suffix");
+
+  char *content = "0x.fp1,";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NUMBER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_COMMA);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_hex_floating_point_numbers_no_suffix_eof() {
+  Test test =
+      cassert_init_test("lexer_hex_floating_point_numbers_no_suffix_eof");
+
+  char *content = "0x.fp1";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NUMBER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_hex_floating_point_number_addition_eof() {
+  Test test = cassert_init_test("lexer_hex_floating_point_number_addition_eof");
+
+  char *content = "0x0F1+m";
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NUMBER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_ADD);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, IDENTIFIER);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+void lexer_all_numbers(Tests *tests) {
   cassert_dap(tests, lexer_basic_number());
   cassert_dap(tests, lexer_numbers());
   cassert_dap(tests, lexer_negative_numbers());
@@ -207,6 +388,23 @@ void lexer_basic(Tests *tests) {
 
   cassert_dap(tests, lexer_suffix_floating_point_numbers());
   cassert_dap(tests, lexer_wrong_suffix_floating_point_numbers());
+
+  cassert_dap(tests, lexer_hex_floating_point_number_error());
+  cassert_dap(tests, lexer_hex_floating_point_numbers());
+
+  cassert_dap(tests, lexer_hex_floating_point_numbers_arithmetic());
+  cassert_dap(tests, lexer_hex_floating_point_numbers_no_suffix());
+  cassert_dap(tests, lexer_hex_floating_point_numbers_no_suffix_eof());
+
+  cassert_dap(tests, lexer_hex_floating_point_number_addition_eof());
+}
+
+void lexer_basic(Tests *tests) {
+  cassert_dap(tests, cassert_lexer_new());
+  cassert_dap(tests, lexer_line_and_column());
+  cassert_dap(tests, lexer_line_and_column_empty_content());
+  cassert_dap(tests, lexer_line_and_column_NULL_content());
+  lexer_all_numbers(tests);
 }
 
 Test lexer_string_and_number() {
@@ -220,15 +418,11 @@ Test lexer_string_and_number() {
 
   Token t = lexer_next(lexer);
   cassert_int_eq(t.kind, STRINGLITERAL);
-  cassert_set_last_cassert_description(
-      &test, strdup(tmp_sprintf("token content: `%s`",
-                                lexer_token_to_cstr(lexer, &t))));
+  add_description(&test, lexer, &t);
 
   t = lexer_next(lexer);
   cassert_int_eq(t.kind, NUMBER);
-  cassert_set_last_cassert_description(
-      &test, strdup(tmp_sprintf("token content: `%s`",
-                                lexer_token_to_cstr(lexer, &t))));
+  add_description(&test, lexer, &t);
 
   return test;
 }
@@ -542,8 +736,8 @@ Test lexer_char_keyword() {
   return test;
 }
 
-Test lexer_string_litteral() {
-  Test test = cassert_init_test("lexer_string_litteral");
+Test lexer_string_literal() {
+  Test test = cassert_init_test("lexer_string_literal");
 
   char *content = "\"HELLO\"";
   size_t len = strlen(content);
@@ -779,10 +973,12 @@ Test lexer_double_quote_in_single_quote() {
   return test;
 }
 
-Test lexer_d() {
-  Test test = cassert_init_test("lexer_d");
+Test lexer_string_literal_after_char_literal_as_backslash() {
+  Test test =
+      cassert_init_test("lexer_string_literal_after_char_literal_as_backslash");
 
-  char *content = "0;";
+  char *content = "'\\\\'; \"0\";";
+
   size_t len = strlen(content);
   Lexer *lexer = lexer_new(__FILE__, content, len, 0);
 
@@ -791,7 +987,11 @@ Test lexer_d() {
   add_description(&test, lexer, &t);
 
   t = lexer_next(lexer);
-  cassert_int_eq(t.kind, PUNCT_DOUBLEQUOTE);
+  cassert_int_eq(t.kind, PUNCT_BACKSLASH);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_BACKSLASH);
   add_description(&test, lexer, &t);
 
   t = lexer_next(lexer);
@@ -799,6 +999,65 @@ Test lexer_d() {
   add_description(&test, lexer, &t);
 
   t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_SEMICOLON);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, STRINGLITERAL);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_SEMICOLON);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_string_literal_after_string_with_backslashes() {
+  Test test =
+      cassert_init_test("lexer_string_literal_after_string_with_backslashes");
+
+  char *content = "\"\\\\\"; \"0\";";
+
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, STRINGLITERAL);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_SEMICOLON);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, STRINGLITERAL);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, PUNCT_SEMICOLON);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_empty_string_literal() {
+  Test test = cassert_init_test("lexer_empty_string_literal");
+
+  char *content = "\"\"";
+
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
   cassert_int_eq(t.kind, STRINGLITERAL);
   add_description(&test, lexer, &t);
 
@@ -810,28 +1069,32 @@ Test lexer_d() {
 }
 
 void lexer_multi_mixed(Tests *tests) {
-  // cassert_dap(tests, lexer_mixed());
-  // cassert_dap(tests, lexer_null_terminator());
-  // cassert_dap(tests, lexer_eof_null_terminator());
-  // cassert_dap(tests, lexer_string_semicolon());
-  // cassert_dap(tests, lexer_char_keyword());
+  cassert_dap(tests, lexer_mixed());
+  cassert_dap(tests, lexer_null_terminator());
+  cassert_dap(tests, lexer_eof_null_terminator());
+  cassert_dap(tests, lexer_string_semicolon());
+  cassert_dap(tests, lexer_char_keyword());
 
-  // cassert_dap(tests, lexer_string_litteral());
-  // cassert_dap(tests, lexer_single_quotes_in_string());
-  // cassert_dap(tests, lexer_escape_double_quotes_in_string());
-  // cassert_dap(tests, lexer_escape_single_quotes_in_string());
-  // cassert_dap(tests, lexer_unclosed_string());
-  // cassert_dap(tests, lexer_unclosed_string_at_eof());
+  cassert_dap(tests, lexer_string_literal());
+  cassert_dap(tests, lexer_single_quotes_in_string());
+  cassert_dap(tests, lexer_escape_double_quotes_in_string());
+  cassert_dap(tests, lexer_escape_single_quotes_in_string());
+  cassert_dap(tests, lexer_unclosed_string());
+  cassert_dap(tests, lexer_unclosed_string_at_eof());
 
-  // cassert_dap(tests, lexer_char_array_def());
+  cassert_dap(tests, lexer_char_array_def());
   cassert_dap(tests, lexer_escaped_double_quote_in_single_quote());
   cassert_dap(tests, lexer_double_quote_in_single_quote());
-  cassert_dap(tests, lexer_d());
+  cassert_dap(tests, lexer_string_literal_after_char_literal_as_backslash());
+  cassert_dap(tests, lexer_string_literal_after_string_with_backslashes());
+
+  cassert_dap(tests, lexer_empty_string_literal());
 }
+
 int main(int argc, char **argv) {
   cassert_tests {
-    // lexer_basic(&tests);
-    // lexer_combination(&tests);
+    lexer_basic(&tests);
+    lexer_combination(&tests);
     lexer_multi_mixed(&tests);
   }
 

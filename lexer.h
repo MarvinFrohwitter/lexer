@@ -59,6 +59,8 @@ typedef struct Lexer {
 
   int isstrlit;
   unsigned long long int line_count;
+  char *line_start;
+  unsigned long long int column_count;
   const char *file_name;
 
   Lexer_Scratch_Buffer buffer;
@@ -292,7 +294,7 @@ const char *lexer_token_to_cstr(Lexer *lexer, Token *token);
 /* ==========================================================================
  */
 
-LEXDEF Token lexer_eof_token(void);
+LEXDEF Token lexer_eof_token(Lexer *lexer);
 LEXDEF Token lexer_error(Lexer *lexer);
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token);
 LEXDEF Token lexer_invalid_token(Lexer *lexer);
@@ -359,6 +361,8 @@ BASICLEXDEF Lexer *lexer_new(const char *file_path, char *content, size_t size,
   lexer->next_start_position = lexer->position;
   lexer->file_name = file_path;
   lexer->line_count = 1;
+  lexer->line_start = content;
+  lexer->column_count = 1;
   lexer->isstrlit = 0;
 
   return lexer;
@@ -409,6 +413,9 @@ LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
   for (size_t i = 0; i < count; i++) {
     if (lexer->content[lexer->position] == '\n') {
       lexer->line_count++;
+      if (lexer_check_boundary_next(lexer)) {
+        lexer->line_start = &lexer->content[lexer->position + 1];
+      }
     }
     if (!lexer_check_boundary(lexer)) {
       return lexer_error(lexer);
@@ -1077,14 +1084,23 @@ LEXDEF int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
 BASICLEXDEF Token lexer_next(Lexer *lexer) {
-  lexer->isstrlit = 0;
-  lexer->next_start_position = lexer->position;
   Token token = {0};
   token.kind = INVALID;
+  if (lexer->content_length == 0 || !lexer->content) {
+    token = lexer_eof_token(lexer);
+    lexer->column_count = 0;
+    lexer->line_count = 0;
+    return token;
+  }
+
+  lexer->isstrlit = 0;
+  lexer->next_start_position = lexer->position;
+  lexer->column_count =
+      &lexer->content[lexer->position] - lexer->line_start + 1;
 
   lexer_trim_left(lexer);
   if (lexer->position >= lexer->content_length) {
-    return lexer_eof_token();
+    return lexer_eof_token(lexer);
   }
 
   token.content = &lexer->content[lexer->position];
@@ -1244,7 +1260,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
   token.kind = INVALID;
   if (!lexer_check_boundary(lexer)) {
-    return lexer_eof_token();
+    return lexer_eof_token(lexer);
   } else {
     lexer_chop_char(lexer, 1);
   }
@@ -1254,11 +1270,14 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
 /* The  function creates the EOF_TOKEN */
 /* @return token The token that will be modified and contains the EOF_TOKEN */
-LEXDEF Token lexer_eof_token(void) {
+LEXDEF Token lexer_eof_token(Lexer *lexer) {
   Token token;
   token.kind = EOF_TOKEN;
   token.size = 0;
   token.content = NULL;
+  if (lexer->column_count > 1) {
+    lexer->column_count -= 1;
+  }
   return token;
 }
 
