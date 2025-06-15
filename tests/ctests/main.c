@@ -1091,11 +1091,162 @@ void lexer_multi_mixed(Tests *tests) {
   cassert_dap(tests, lexer_empty_string_literal());
 }
 
+Test lexer_all_keywords() {
+  Test test = cassert_init_test("lexer_all_keywords");
+
+  char *content = " auto"
+                  " break"
+                  " case"
+                  " char"
+                  " const"
+                  " continue"
+                  " default"
+                  " do"
+                  " double"
+                  " else"
+                  " enum"
+                  " extern"
+                  " float"
+                  " for"
+                  " goto"
+                  " if"
+                  " int"
+                  " long"
+                  " register"
+                  " return"
+                  " short"
+                  " signed"
+                  " sizeof"
+                  " static"
+                  " struct"
+                  " switch"
+                  " typedef"
+                  " union"
+                  " unsigned"
+                  " void"
+                  " volatile"
+                  " while"
+                  " size_t"
+                  "";
+
+  size_t len = strlen(content);
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_AUTO);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_BREAK);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_CASE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_CHAR);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_CONST);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_CONTINUE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_DEFAULT);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_DO);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_DOUBLE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_ELSE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_ENUM);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_EXTERN);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_FLOAT);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_FOR);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_GOTO);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_IF);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_INT);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_LONG);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_REGISTER);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_RETURN);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_SHORT);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_SIGNED);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_SIZEOF);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_STATIC);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_STRUCT);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_SWITCH);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_TYPEDEF);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_UNION);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_UNSIGNED);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_VOID);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_VOLATILE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_WHILE);
+  add_description(&test, lexer, &token);
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, KEYWORD_SIZE_T);
+  add_description(&test, lexer, &token);
+
+  token = lexer_next(lexer);
+  cassert_int_eq(token.kind, EOF_TOKEN);
+  add_description(&test, lexer, &token);
+
+  return test;
+}
+
+void lexer_keywords(Tests *tests) { cassert_dap(tests, lexer_all_keywords()); }
+
 int main(int argc, char **argv) {
   cassert_tests {
     lexer_basic(&tests);
     lexer_combination(&tests);
     lexer_multi_mixed(&tests);
+    lexer_keywords(&tests);
   }
 
 #ifdef SHORT_LOG
