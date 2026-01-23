@@ -49,6 +49,8 @@ typedef struct Lexer {
 
   int isstrlit;
   unsigned long long int line_count;
+  char *line_start;
+  unsigned long long int column_count;
   const char *file_name;
 
   Lexer_Scratch_Buffer buffer;
@@ -60,9 +62,6 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\v', '\f', '\\'};
 /* The variable PUNCTUATORS is an array of single tokens of type PUNCTUATOR. */
 /* It contains the tokens to match on. */
 static const char PUNCTUATORS[] = {
-    // NOTE: It is important that the '.' is at the end of the array! It is
-    // checked by the number function for floating point calculations.
-    // And by the lexer_is_punctuator() function.
     ',',  ']', ')', '=', ';', '{', '}', '&', '*', '+', '-', '~',  '|', '/',
     '\\', '%', '<', '>', '^', '|', '?', ':', '(', '[', '!', '\'', '.'};
 
@@ -282,7 +281,7 @@ const char *lexer_token_to_cstr(Lexer *lexer, Token *token);
 /* ==========================================================================
  */
 
-LEXDEF Token lexer_eof_token(void);
+LEXDEF Token lexer_eof_token(Lexer *lexer);
 LEXDEF Token lexer_error(Lexer *lexer);
 LEXDEF void lexer_trace_token(Lexer *lexer, Token *token);
 LEXDEF Token lexer_invalid_token(Lexer *lexer);
@@ -297,7 +296,8 @@ LEXDEF void lexer_trim_left(Lexer *lexer);
 LEXDEF int lexer_next_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer);
-LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t max);
+LEXDEF int lexer_is_punctuator_exclude(Lexer *lexer, char exclude);
+LEXDEF int lexer_is_punctuator(Lexer *lexer);
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
 LEXDEF int lexer_check_boundary(Lexer *lexer);
 LEXDEF int lexer_check_boundary_next(Lexer *lexer);
@@ -315,3 +315,4 @@ LEXDEF int is_sybol_alpha_and_(char c);
  */
 
 #endif // LEXER_H_
+

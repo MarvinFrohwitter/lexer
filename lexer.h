@@ -72,9 +72,6 @@ static const char ESCAPE[] = {'\n', '\r', '\t', '\v', '\f', '\\'};
 /* The variable PUNCTUATORS is an array of single tokens of type PUNCTUATOR. */
 /* It contains the tokens to match on. */
 static const char PUNCTUATORS[] = {
-    // NOTE: It is important that the '.' is at the end of the array! It is
-    // checked by the number function for floating point calculations.
-    // And by the lexer_is_punctuator() function.
     ',',  ']', ')', '=', ';', '{', '}', '&', '*', '+', '-', '~',  '|', '/',
     '\\', '%', '<', '>', '^', '|', '?', ':', '(', '[', '!', '\'', '.'};
 
@@ -309,7 +306,8 @@ LEXDEF void lexer_trim_left(Lexer *lexer);
 LEXDEF int lexer_next_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_char_is(Lexer *lexer, char c);
 LEXDEF int lexer_is_escape_seq_or_space(Lexer *lexer);
-LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t max);
+LEXDEF int lexer_is_punctuator_exclude(Lexer *lexer, char exclude);
+LEXDEF int lexer_is_punctuator(Lexer *lexer);
 LEXDEF int lexer_check_punctuator_lookahead(Lexer *lexer);
 LEXDEF int lexer_check_boundary(Lexer *lexer);
 LEXDEF int lexer_check_boundary_next(Lexer *lexer);
@@ -336,8 +334,6 @@ LEXDEF int is_sybol_alpha_and_(char c);
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
 
 /* The function lexer_new() creates the new state of a lexer. */
 /* @param content The content that the lexer has to tokenise. */
@@ -509,24 +505,32 @@ LEXDEF void lexer_trim_left(Lexer *lexer) {
 /* The function lexer_is_punctuator() returns, if the lexer has found a */
 /* punctuator of the given length at the current lexer content position. */
 /* @param lexer The given Lexer that contains the current state. */
-/* @param max The maximum length a punctuator is searched by in the list. 0 if
- * the complete */
-/* default list of punctuators should be searched thru. */
+/* @param exclude The character that should be excluded from the check. */
+/* Pass 0 if the complete default list of punctuators should be searched thru.
+ */
 /* @return boolean True, if the content at the current position has a punctuator
  */
 /* of given length, otherwise false. */
-LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t max) {
-  if (max == 0) {
-    max = sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]);
-  }
-
-  /* The position of the lexer is on the next char. */
-  for (size_t i = 0; i < max; i++) {
+LEXDEF int lexer_is_punctuator_exclude(Lexer *lexer, char exclude) {
+  for (size_t i = 0; i < sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]); i++) {
+    if (PUNCTUATORS[i] == exclude) {
+      continue;
+    }
     if (PUNCTUATORS[i] == lexer->content[lexer->position]) {
       return 1;
     }
   }
   return 0;
+}
+
+/* The function lexer_is_punctuator() returns, if the lexer has found a */
+/* punctuator of the given length at the current lexer content position. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @return boolean True, if the content at the current position has a punctuator
+ */
+/* of given length, otherwise false. */
+LEXDEF int lexer_is_punctuator(Lexer *lexer) {
+  return lexer_is_punctuator_exclude(lexer, 0);
 }
 
 /** The function lexer_check_punctuator_lookahead() computes, if the next
@@ -765,7 +769,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
     char c = lexer->content[lexer->position];
     if (lexer->content[lexer->position - 1] == '.' &&
         (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
-         lexer_is_punctuator(lexer, 0))) {
+         lexer_is_punctuator(lexer))) {
       goto punctuator;
     }
     lexer->position = pos;
@@ -838,7 +842,7 @@ postfixcheck: {
       break;
     default:
       if (lexer_check_boundary(lexer) &&
-          (lexer_is_punctuator(lexer, ARRAY_LENGTH(PUNCTUATORS) - 1) ||
+          (lexer_is_punctuator_exclude(lexer, '.') ||
            is_escape_seq(lexer->content[lexer->position]))) {
         goto compute_return;
         break;
@@ -874,7 +878,7 @@ postfixcheck: {
     }
     default:
       if (lexer_check_boundary(lexer) &&
-          (lexer_is_punctuator(lexer, ARRAY_LENGTH(PUNCTUATORS) - 1) ||
+          (lexer_is_punctuator_exclude(lexer, '.') ||
            is_escape_seq(lexer->content[lexer->position]))) {
         i = maxiter;
         break;
@@ -1225,7 +1229,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
   // Check for punctuators
   if (lexer_check_boundary(lexer)) {
     token.size = lexer->position;
-    if (lexer_is_punctuator(lexer, 0)) {
+    if (lexer_is_punctuator(lexer)) {
 
 #ifdef LEXLOOKAHEAD
 

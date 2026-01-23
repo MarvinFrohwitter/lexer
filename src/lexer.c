@@ -7,8 +7,6 @@
 
 #include "lexer.h"
 
-#define ARRAY_LENGTH(x) (sizeof(x) / sizeof((x)[0]))
-
 /* The function lexer_new() creates the new state of a lexer. */
 /* @param content The content that the lexer has to tokenise. */
 /* @param size The content length. */
@@ -31,6 +29,8 @@ BASICLEXDEF Lexer *lexer_new(const char *file_path, char *content, size_t size,
   lexer->next_start_position = lexer->position;
   lexer->file_name = file_path;
   lexer->line_count = 1;
+  lexer->line_start = content;
+  lexer->column_count = 1;
   lexer->isstrlit = 0;
 
   return lexer;
@@ -81,6 +81,9 @@ LEXDEF Token lexer_chop_char(Lexer *lexer, size_t count) {
   for (size_t i = 0; i < count; i++) {
     if (lexer->content[lexer->position] == '\n') {
       lexer->line_count++;
+      if (lexer_check_boundary_next(lexer)) {
+        lexer->line_start = &lexer->content[lexer->position + 1];
+      }
     }
     if (!lexer_check_boundary(lexer)) {
       return lexer_error(lexer);
@@ -174,24 +177,32 @@ LEXDEF void lexer_trim_left(Lexer *lexer) {
 /* The function lexer_is_punctuator() returns, if the lexer has found a */
 /* punctuator of the given length at the current lexer content position. */
 /* @param lexer The given Lexer that contains the current state. */
-/* @param max The maximum length a punctuator is searched by in the list. 0 if
- * the complete */
-/* default list of punctuators should be searched thru. */
+/* @param exclude The character that should be excluded from the check. */
+/* Pass 0 if the complete default list of punctuators should be searched thru.
+ */
 /* @return boolean True, if the content at the current position has a punctuator
  */
 /* of given length, otherwise false. */
-LEXDEF int lexer_is_punctuator(Lexer *lexer, size_t max) {
-  if (max == 0) {
-    max = sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]);
-  }
-
-  /* The position of the lexer is on the next char. */
-  for (size_t i = 0; i < max; i++) {
+LEXDEF int lexer_is_punctuator_exclude(Lexer *lexer, char exclude) {
+  for (size_t i = 0; i < sizeof(PUNCTUATORS) / sizeof(PUNCTUATORS[0]); i++) {
+    if (PUNCTUATORS[i] == exclude) {
+      continue;
+    }
     if (PUNCTUATORS[i] == lexer->content[lexer->position]) {
       return 1;
     }
   }
   return 0;
+}
+
+/* The function lexer_is_punctuator() returns, if the lexer has found a */
+/* punctuator of the given length at the current lexer content position. */
+/* @param lexer The given Lexer that contains the current state. */
+/* @return boolean True, if the content at the current position has a punctuator
+ */
+/* of given length, otherwise false. */
+LEXDEF int lexer_is_punctuator(Lexer *lexer) {
+  return lexer_is_punctuator_exclude(lexer, 0);
 }
 
 /** The function lexer_check_punctuator_lookahead() computes, if the next
@@ -430,7 +441,7 @@ LEXDEF int lexer_check_is_number(Lexer *lexer, Token *token) {
     char c = lexer->content[lexer->position];
     if (lexer->content[lexer->position - 1] == '.' &&
         (isalpha(c) || isspace(c) || lexer_char_is(lexer, '_') ||
-         lexer_is_punctuator(lexer, 0))) {
+         lexer_is_punctuator(lexer))) {
       goto punctuator;
     }
     lexer->position = pos;
@@ -503,7 +514,7 @@ postfixcheck: {
       break;
     default:
       if (lexer_check_boundary(lexer) &&
-          (lexer_is_punctuator(lexer, ARRAY_LENGTH(PUNCTUATORS) - 1) ||
+          (lexer_is_punctuator_exclude(lexer, '.') ||
            is_escape_seq(lexer->content[lexer->position]))) {
         goto compute_return;
         break;
@@ -539,7 +550,7 @@ postfixcheck: {
     }
     default:
       if (lexer_check_boundary(lexer) &&
-          (lexer_is_punctuator(lexer, ARRAY_LENGTH(PUNCTUATORS) - 1) ||
+          (lexer_is_punctuator_exclude(lexer, '.') ||
            is_escape_seq(lexer->content[lexer->position]))) {
         i = maxiter;
         break;
@@ -749,14 +760,23 @@ LEXDEF int is_sybol_alpha_and_(char c) { return isalpha(c) || c == '_'; }
 /* @param lexer The given Lexer that contains the current state. */
 /* @return Token The next found token in the given content */
 BASICLEXDEF Token lexer_next(Lexer *lexer) {
-  lexer->isstrlit = 0;
-  lexer->next_start_position = lexer->position;
   Token token = {0};
   token.kind = INVALID;
+  if (lexer->content_length == 0 || !lexer->content) {
+    token = lexer_eof_token(lexer);
+    lexer->column_count = 0;
+    lexer->line_count = 0;
+    return token;
+  }
+
+  lexer->isstrlit = 0;
+  lexer->next_start_position = lexer->position;
+  lexer->column_count =
+      &lexer->content[lexer->position] - lexer->line_start + 1;
 
   lexer_trim_left(lexer);
   if (lexer->position >= lexer->content_length) {
-    return lexer_eof_token();
+    return lexer_eof_token(lexer);
   }
 
   token.content = &lexer->content[lexer->position];
@@ -881,7 +901,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
   // Check for punctuators
   if (lexer_check_boundary(lexer)) {
     token.size = lexer->position;
-    if (lexer_is_punctuator(lexer, 0)) {
+    if (lexer_is_punctuator(lexer)) {
 
 #ifdef LEXLOOKAHEAD
 
@@ -916,7 +936,7 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
   token.kind = INVALID;
   if (!lexer_check_boundary(lexer)) {
-    return lexer_eof_token();
+    return lexer_eof_token(lexer);
   } else {
     lexer_chop_char(lexer, 1);
   }
@@ -926,11 +946,14 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
 /* The  function creates the EOF_TOKEN */
 /* @return token The token that will be modified and contains the EOF_TOKEN */
-LEXDEF Token lexer_eof_token(void) {
+LEXDEF Token lexer_eof_token(Lexer *lexer) {
   Token token;
   token.kind = EOF_TOKEN;
   token.size = 0;
   token.content = NULL;
+  if (lexer->column_count > 1) {
+    lexer->column_count -= 1;
+  }
   return token;
 }
 
@@ -1342,3 +1365,4 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
   }
   return 1;
 }
+
