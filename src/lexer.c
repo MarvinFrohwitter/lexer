@@ -1366,3 +1366,23 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
   return 1;
 }
 
+/**
+ * @brief The function creates a string representation of the available kinds.
+ *
+ * @param kind The kinds that the lexer knows about.
+ * @return The c_string representation of the given kind.
+ */
+LEXDEF const char *lexer_kind_to_str(Kind kind) {
+  switch (kind) {
+#define X_KIND(name, value, ...)                                                    \
+  case name:                                                                   \
+    return #name;
+    KINDS_LIST
+#undef X
+  default:
+    assert("UNREACHABLE");
+  }
+
+  return NULL;
+}
+
