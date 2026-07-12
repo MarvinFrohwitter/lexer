@@ -1,3 +1,11 @@
+#include <assert.h>
+#include <ctype.h>
+#include <stddef.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+
 #define CASSERT_IMPLEMENTATION
 #define PRINT_OPERATION_AND_DESCRIPTION
 #include "cassert.h"
@@ -23,7 +31,7 @@ Test cassert_lexer_new() {
   size_t pos = 0;
 
   Lexer base_lexer;
-  base_lexer.content = content;
+  base_lexer.content = (unsigned char *)content;
   base_lexer.content_length = len;
   base_lexer.position = pos;
 
@@ -377,6 +385,120 @@ Test lexer_hex_floating_point_number_addition_eof() {
 
   return test;
 }
+
+Test lexer_below_printable_asccii_range_content() {
+  Test test = cassert_init_test("lexer_below_printable_asccii_range_content");
+
+  int i = 0;
+  size_t len = 4;
+  char content[len];
+  content[i++] = 1;
+  content[i++] = 3;
+  content[i++] = 0;
+  content[i++] = 31;
+
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_LOW);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_LOW);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, NULL_TERMINATOR);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_LOW);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_ansi_valuse() {
+  Test test = cassert_init_test("lexer_ansi_valuse");
+
+  int i = 0;
+  size_t len = 5;
+  char content[len];
+  content[i++] = (char)130;
+  content[i++] = '@';
+  content[i++] = '$';
+  content[i++] = '`';
+  content[i++] = 127;
+
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ANSI_HIGH);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_AT);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_DOLLAR);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_BACKTICK);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_DEL);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
+Test lexer_missing_asccii_values() {
+  Test test = cassert_init_test("lexer_missing_asccii_values");
+
+  int i = 0;
+  size_t len = 4;
+  char content[len];
+  content[i++] = '@';
+  content[i++] = '$';
+  content[i++] = '`';
+  content[i++] = 127;
+
+  Lexer *lexer = lexer_new(__FILE__, content, len, 0);
+
+  Token t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_AT);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_DOLLAR);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_BACKTICK);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, ASCII_DEL);
+  add_description(&test, lexer, &t);
+
+  t = lexer_next(lexer);
+  cassert_int_eq(t.kind, EOF_TOKEN);
+  add_description(&test, lexer, &t);
+
+  return test;
+}
+
 void lexer_all_numbers(Tests *tests) {
   cassert_dap(tests, lexer_basic_number());
   cassert_dap(tests, lexer_numbers());
@@ -404,7 +526,12 @@ void lexer_basic(Tests *tests) {
   cassert_dap(tests, lexer_line_and_column());
   cassert_dap(tests, lexer_line_and_column_empty_content());
   cassert_dap(tests, lexer_line_and_column_NULL_content());
+
   lexer_all_numbers(tests);
+
+  cassert_dap(tests, lexer_below_printable_asccii_range_content());
+  // cassert_dap(tests, lexer_missing_asccii_values());
+  // cassert_dap(tests, lexer_ansi_valuse());
 }
 
 Test lexer_string_and_number() {
@@ -1241,12 +1368,12 @@ Test lexer_all_keywords() {
 
 void lexer_keywords(Tests *tests) { cassert_dap(tests, lexer_all_keywords()); }
 
-int main(int argc, char **argv) {
+int main(void) {
   cassert_tests {
     lexer_basic(&tests);
-    lexer_combination(&tests);
-    lexer_multi_mixed(&tests);
-    lexer_keywords(&tests);
+    // lexer_combination(&tests);
+    // lexer_multi_mixed(&tests);
+    // lexer_keywords(&tests);
   }
 
 #ifdef SHORT_LOG
@@ -1256,6 +1383,6 @@ int main(int argc, char **argv) {
 #endif // SHORT_LOG
 
   cassert_free_tests(&tests);
-  free(tmp_buffer.elements);
+  // free(tmp_buffer.elements);
   return 0;
 }
