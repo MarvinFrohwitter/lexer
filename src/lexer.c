@@ -1,6 +1,7 @@
 #include <assert.h>
 #include <ctype.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -24,12 +25,12 @@ BASICLEXDEF Lexer *lexer_new(const char *file_path, char *content, size_t size,
   }
 
   lexer->content_length = size;
-  lexer->content = content;
+  lexer->content = (unsigned char *)content;
   lexer->position = position;
   lexer->next_start_position = lexer->position;
   lexer->file_name = file_path;
   lexer->line_count = 1;
-  lexer->line_start = content;
+  lexer->line_start = lexer->content;
   lexer->column_count = 1;
   lexer->isstrlit = 0;
 
@@ -65,7 +66,7 @@ const char *lexer_token_to_cstr(Lexer *lexer, Token *token) {
     lexer_dapc(&lexer->buffer, token->content, token->size);
   }
   lexer_dap(&lexer->buffer, 0);
-  return lexer->buffer.elements;
+  return (char *)lexer->buffer.elements;
 }
 
 /* The function lexer_chop_char() consumes the amount of chars given by the */
@@ -103,7 +104,7 @@ LEXDEF Token lexer_invalid_token(Lexer *lexer) {
   Token token;
   token.kind = INVALID;
   token.size = 1;
-  token.content = &lexer->content[lexer->position];
+  token.content = (char *)&lexer->content[lexer->position];
   return token;
 }
 
@@ -769,17 +770,17 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     return token;
   }
 
+  lexer_trim_left(lexer);
   lexer->isstrlit = 0;
   lexer->next_start_position = lexer->position;
   lexer->column_count =
       &lexer->content[lexer->position] - lexer->line_start + 1;
 
-  lexer_trim_left(lexer);
   if (lexer->position >= lexer->content_length) {
     return lexer_eof_token(lexer);
   }
 
-  token.content = &lexer->content[lexer->position];
+  token.content = (char *)&lexer->content[lexer->position];
 
   // Check for null terminator
   if (lexer_char_is(lexer, '\0')) {
@@ -903,6 +904,11 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
     token.size = lexer->position;
     if (lexer_is_punctuator(lexer)) {
 
+      // TODO: Check for
+      // '\0':  // @TODO ocatal constants
+      // '\x': '\X': // @TODO hex constants
+      // '\u': // @TODO unicode constants
+
 #ifdef LEXLOOKAHEAD
 
       int lookahead = lexer_check_punctuator_lookahead(lexer);
@@ -932,9 +938,36 @@ BASICLEXDEF Token lexer_next(Lexer *lexer) {
 
       return token;
     }
+
+    // Manual ANSI range check for remaining unchecked values.
+    uint32_t temp_val = lexer->content[lexer->position];
+    // This is check is made like that to be able to switch to Unicode later and
+    // forget this check.
+    if (256 > temp_val) {
+      token.kind = ANSI_HIGH;
+    }
+
+    if (' ' > temp_val) {
+      token.kind = ASCII_LOW;
+    }
+
+    if (ASCII_DEL == temp_val) {
+      token.kind = ASCII_DEL;
+    }
+
+    if (ASCII_DOLLAR == temp_val) {
+      token.kind = ASCII_DOLLAR;
+    }
+
+    if (ASCII_AT == temp_val) {
+      token.kind = ASCII_AT;
+    }
+
+    if (ASCII_BACKTICK == temp_val) {
+      token.kind = ASCII_BACKTICK;
+    }
   }
 
-  token.kind = INVALID;
   if (!lexer_check_boundary(lexer)) {
     return lexer_eof_token(lexer);
   } else {
@@ -969,7 +1002,7 @@ LEXDEF void lexer_trace_token(Lexer *lexer, Token *token) {
   }
 
   lexer->position = lexer->next_start_position;
-  token->content = &lexer->content[lexer->next_start_position];
+  token->content = (char *)&lexer->content[lexer->next_start_position];
 
   token->kind = ERROR;
 }
@@ -1080,7 +1113,7 @@ handle:
   Token token;
   token.kind = ERROR;
   token.size = strlen(final_token);
-  token.content = &lexer->content[preserve_lexer_posion];
+  token.content = (char *)&lexer->content[preserve_lexer_posion];
 
   /* Free the allocated memory for the individual parts of the token string.
    */
@@ -1102,92 +1135,92 @@ handle:
  * @return boolean Returns true if a keyword was found, otherwise false.
  */
 LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length) {
-
+  char *ptr = (char *)&lexer->content[lexer->position];
   switch (length) {
   case 2: {
-    if (strncmp("do", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("do", ptr, length) == 0)
       token->kind = KEYWORD_DO;
-    else if (strncmp("if", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("if", ptr, length) == 0)
       token->kind = KEYWORD_IF;
   } break;
 
   case 3: {
-    if (strncmp("for", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("for", ptr, length) == 0)
       token->kind = KEYWORD_FOR;
-    else if (strncmp("int", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("int", ptr, length) == 0)
       token->kind = KEYWORD_INT;
   } break;
 
   case 4: {
-    if (strncmp("char", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("char", ptr, length) == 0)
       token->kind = KEYWORD_CHAR;
-    else if (strncmp("void", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("void", ptr, length) == 0)
       token->kind = KEYWORD_VOID;
-    else if (strncmp("else", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("else", ptr, length) == 0)
       token->kind = KEYWORD_ELSE;
-    else if (strncmp("long", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("long", ptr, length) == 0)
       token->kind = KEYWORD_LONG;
-    else if (strncmp("goto", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("goto", ptr, length) == 0)
       token->kind = KEYWORD_GOTO;
-    else if (strncmp("case", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("case", ptr, length) == 0)
       token->kind = KEYWORD_CASE;
-    else if (strncmp("enum", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("enum", ptr, length) == 0)
       token->kind = KEYWORD_ENUM;
-    else if (strncmp("auto", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("auto", ptr, length) == 0)
       token->kind = KEYWORD_AUTO;
   } break;
 
   case 5: {
-    if (strncmp("while", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("while", ptr, length) == 0)
       token->kind = KEYWORD_WHILE;
-    else if (strncmp("float", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("float", ptr, length) == 0)
       token->kind = KEYWORD_FLOAT;
-    else if (strncmp("const", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("const", ptr, length) == 0)
       token->kind = KEYWORD_CONST;
-    else if (strncmp("break", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("break", ptr, length) == 0)
       token->kind = KEYWORD_BREAK;
-    else if (strncmp("short", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("short", ptr, length) == 0)
       token->kind = KEYWORD_SHORT;
-    else if (strncmp("union", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("union", ptr, length) == 0)
       token->kind = KEYWORD_UNION;
   } break;
 
   case 6: {
-    if (strncmp("return", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("return", ptr, length) == 0)
       token->kind = KEYWORD_RETURN;
-    if (strncmp("size_t", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("size_t", ptr, length) == 0)
       token->kind = KEYWORD_SIZE_T;
-    else if (strncmp("struct", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("struct", ptr, length) == 0)
       token->kind = KEYWORD_STRUCT;
-    else if (strncmp("switch", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("switch", ptr, length) == 0)
       token->kind = KEYWORD_SWITCH;
-    else if (strncmp("double", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("double", ptr, length) == 0)
       token->kind = KEYWORD_DOUBLE;
-    else if (strncmp("sizeof", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("sizeof", ptr, length) == 0)
       token->kind = KEYWORD_SIZEOF;
-    else if (strncmp("static", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("static", ptr, length) == 0)
       token->kind = KEYWORD_STATIC;
-    else if (strncmp("signed", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("signed", ptr, length) == 0)
       token->kind = KEYWORD_SIGNED;
-    else if (strncmp("extern", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("extern", ptr, length) == 0)
       token->kind = KEYWORD_EXTERN;
   } break;
 
   case 7: {
-    if (strncmp("default", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("default", ptr, length) == 0)
       token->kind = KEYWORD_DEFAULT;
-    else if (strncmp("typedef", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("typedef", ptr, length) == 0)
       token->kind = KEYWORD_TYPEDEF;
   } break;
 
   case 8: {
-    if (strncmp("continue", &lexer->content[lexer->position], length) == 0)
+    if (strncmp("continue", ptr, length) == 0)
       token->kind = KEYWORD_CONTINUE;
-    else if (strncmp("register", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("register", ptr, length) == 0)
       token->kind = KEYWORD_REGISTER;
-    else if (strncmp("unsigned", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("unsigned", ptr, length) == 0)
       token->kind = KEYWORD_UNSIGNED;
-    else if (strncmp("volatile", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("volatile", ptr, length) == 0)
       token->kind = KEYWORD_VOLATILE;
   } break;
 
@@ -1212,10 +1245,10 @@ LEXDEF int lexer_keyword_set_token(Lexer *lexer, Token *token, size_t length) {
  */
 LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
                                       size_t length) {
-
+  char *ptr = (char *)&lexer->content[lexer->position];
   switch (length) {
   case 1: {
-    switch (lexer->content[lexer->position]) {
+    switch (*ptr) {
     case PUNCT_SINGLEQUOTE:
       token->kind = PUNCT_SINGLEQUOTE;
       break;
@@ -1302,55 +1335,59 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
     }
   } break;
   case 2: {
-    if (strncmp("->", &lexer->content[lexer->position], length) == 0)
+    if (0)
+      return 0;
+    else if (strncmp("->", ptr, length) == 0)
       token->kind = PUNCT_PDEREF;
-    else if (strncmp("++", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("++", ptr, length) == 0)
       token->kind = PUNCT_INCREMENT;
-    else if (strncmp("--", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("--", ptr, length) == 0)
       token->kind = PUNCT_DECREMENT;
-    else if (strncmp("<<", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("<<", ptr, length) == 0)
       token->kind = PUNCT_LEFTSHIFT;
-    else if (strncmp(">>", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp(">>", ptr, length) == 0)
       token->kind = PUNCT_RIGHTSHIFT;
-    else if (strncmp("<=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("<=", ptr, length) == 0)
       token->kind = PUNCT_LOREQ;
-    else if (strncmp(">=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp(">=", ptr, length) == 0)
       token->kind = PUNCT_GOREQ;
-    else if (strncmp("==", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("==", ptr, length) == 0)
       token->kind = PUNCT_EQUAL;
-    else if (strncmp("!=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("!=", ptr, length) == 0)
       token->kind = PUNCT_NOTEQ;
-    else if (strncmp("&&", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("&&", ptr, length) == 0)
       token->kind = PUNCT_LAND;
-    else if (strncmp("||", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("||", ptr, length) == 0)
       token->kind = PUNCT_LOR;
-    else if (strncmp("*=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("*=", ptr, length) == 0)
       token->kind = PUNCT_MULEQ;
-    else if (strncmp("/=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("/=", ptr, length) == 0)
       token->kind = PUNCT_DIVEQ;
-    else if (strncmp("%=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("%=", ptr, length) == 0)
       token->kind = PUNCT_MODEQ;
-    else if (strncmp("+=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("+=", ptr, length) == 0)
       token->kind = PUNCT_ADDEQ;
-    else if (strncmp("-=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("-=", ptr, length) == 0)
       token->kind = PUNCT_SUBEQ;
-    else if (strncmp("&=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("&=", ptr, length) == 0)
       token->kind = PUNCT_BANDEQ;
-    else if (strncmp("^=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("^=", ptr, length) == 0)
       token->kind = PUNCT_BXOREQ;
-    else if (strncmp("|=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("|=", ptr, length) == 0)
       token->kind = PUNCT_BOREQ;
-    else if (strncmp("##", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("##", ptr, length) == 0)
       token->kind = PUNCT_HHTAG;
     else
       return 0;
   } break;
   case 3: {
-    if (strncmp("...", &lexer->content[lexer->position], length) == 0)
+    if (0)
+      return 0;
+    else if (strncmp("...", ptr, length) == 0)
       token->kind = PUNCT_VARIADIC;
-    else if (strncmp("<<=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp("<<=", ptr, length) == 0)
       token->kind = PUNCT_LEFTSHIFTEQ;
-    else if (strncmp(">>=", &lexer->content[lexer->position], length) == 0)
+    else if (strncmp(">>=", ptr, length) == 0)
       token->kind = PUNCT_RIGHTSHIFTEQ;
     else {
       return 0;
@@ -1374,7 +1411,7 @@ LEXDEF int lexer_punctuator_set_token(Lexer *lexer, Token *token,
  */
 LEXDEF const char *lexer_kind_to_str(Kind kind) {
   switch (kind) {
-#define X_KIND(name, value, ...)                                                    \
+#define X_KIND(name, value, ...)                                               \
   case name:                                                                   \
     return #name;
     KINDS_LIST
@@ -1385,4 +1422,3 @@ LEXDEF const char *lexer_kind_to_str(Kind kind) {
 
   return NULL;
 }
-

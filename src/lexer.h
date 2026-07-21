@@ -36,20 +36,20 @@
 #endif // LEXDEF
 
 typedef struct {
-  char *elements;
+  unsigned char *elements;
   size_t count;
   size_t capacity;
 } Lexer_Scratch_Buffer; // A representation of a file content.
 
 typedef struct Lexer {
-  char *content;
+  unsigned char *content;
   unsigned long long int content_length;
   unsigned long long int position;
   unsigned long long int next_start_position;
 
   int isstrlit;
   unsigned long long int line_count;
-  char *line_start;
+  unsigned char *line_start;
   unsigned long long int column_count;
   const char *file_name;
 
@@ -78,9 +78,16 @@ static const char PUNCTUATORS[] = {
   X_KIND(PREPROCESSING, 8)                                                     \
   X_KIND(COMMENT, 9)                                                           \
   X_KIND(EOF_TOKEN, 10)                                                        \
+  X_KIND(ASCII_LOW, 11)                                                        \
+  X_KIND(ANSI_HIGH, 12)                                                        \
+                                                                               \
+  X_KIND(ASCII_DOLLAR, '$', /*      36*/)                                      \
+  X_KIND(ASCII_AT, '@', /*          64*/)                                      \
+  X_KIND(ASCII_BACKTICK, '`', /*    96*/)                                      \
+                                                                               \
   X_KIND(PUNCT_SINGLEQUOTE, 39, /* "'"*/)                                      \
   X_KIND(PUNCT_DOUBLEQUOTE, 34, /* '"'*/)                                      \
-  X_KIND(PUNCT_BACKSLASH, '\\', /* 92*/)                                       \
+  X_KIND(PUNCT_BACKSLASH, '\\', /*  92*/)                                      \
                                                                                \
   /* ALL PUNCTUATORS */                                                        \
                                                                                \
@@ -109,6 +116,7 @@ static const char PUNCTUATORS[] = {
   X_KIND(PUNCT_BOR, '|', /*      124*/)                                        \
   X_KIND(PUNCT_RBRACE, '}', /*   125*/)                                        \
   X_KIND(PUNCT_BNOT, '~', /*     126*/)                                        \
+  X_KIND(ASCII_DEL, 127, /*      127*/)                                        \
                                                                                \
   /* LANGECOLON = LBRACKET;    // '<: = ['        */                           \
   /* COLONRANGE = RBRACKET;    // ':> = ]'        */                           \
